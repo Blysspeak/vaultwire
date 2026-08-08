@@ -1,0 +1,125 @@
+// Схема раздела 5 спецификации. Сервер хранит только шифротекст:
+// ни путей, ни имён, ни содержимого в открытом виде здесь нет.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Space {
+  id            String   @id
+  // base64 случайной соли на 32 байта, отдаётся клиенту открыто
+  salt          String
+  // AES-GCM(metaKey, "vaultwire-v1:" + spaceId), проверка пароля на клиенте
+  verifier      String
+  keyEpoch      Int      @default(0)
+  // монотонный счётчик изменений пространства, растёт под блокировкой строки
+  seq           BigInt   @default(0)
+  retentionDays Int      @default(30)
+  maxRevisions  Int      @default(20)
+  quotaBytes    BigInt
+  usedBytes     BigInt   @default(0)
+  createdAt     DateTime @default(now())
+
+  devices Device[]
+  invites Invite[]
+  docs    Doc[]
+  docRevs DocRev[]
+  blobs   Blob[]
+}
+
+model Device {
+  id String @id
+
+  spaceId String
+  // SHA-256 токена в hex, сам токен показывается один раз при активации инвайта
+  tokenHash  String    @unique
+  // owner | rw | ro, значения из roleSchema в shared
+  role       String
+  label      String
+  createdAt  DateTime  @default(now())
+  lastSeenAt DateTime?
+  revokedAt  DateTime?
+
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@index([spaceId])
+}
+
+model Invite {
+  id String @id
+
+  spaceId String
+  // SHA-256 кода инвайта в hex
+  codeHash  String   @unique
+  role      String
+  expiresAt DateTime
+  maxUses   Int
+  usedCount Int      @default(0)
+  createdBy String
+  createdAt DateTime @default(now())
+
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@index([spaceId])
+}
+
+model Doc {
+  spaceId String
+  // base64url(HMAC-SHA256(pathKey, путь)), считает клиент
+  docId      String
+  rev        Int
+  seq        BigInt
+  deleted    Boolean  @default(false)
+  epoch      Int      @default(0)
+  // AES-GCM метаданных; у надгробия свежих метаданных нет
+  metaCipher String?
+  blobHash   String?
+  size       Int      @default(0)
+  deviceId   String
+  updatedAt  DateTime @updatedAt
+
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@id([spaceId, docId])
+  // весь опрос изменений: WHERE spaceId = ? AND seq > ? ORDER BY seq LIMIT ?
+  @@index([spaceId, seq])
+}
+
+model DocRev {
+  spaceId    String
+  docId      String
+  rev        Int
+  seq        BigInt
+  deleted    Boolean
+  metaCipher String?
+  blobHash   String?
+  deviceId   String
+  createdAt  DateTime @default(now())
+
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@id([spaceId, docId, rev])
+  @@index([spaceId, seq])
+  // сборщику мусора нужно узнать, ссылается ли на тело хоть одна ревизия
+  @@index([spaceId, blobHash])
+}
+
+model Blob {
+  spaceId   String
+  // SHA-256 шифротела в нижнем регистре hex
+  hash      String
+  size      Int
+  refCount  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@id([spaceId, hash])
+  // отбор кандидатов на физическое удаление после срока хранения
+  @@index([spaceId, refCount, createdAt])
+}
