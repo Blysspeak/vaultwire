@@ -1,0 +1,113 @@
+/* Боковая панель: вкладки, списки операций, проблем и конфликтов. */
+
+.vw-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-3);
+  padding: var(--size-4-3);
+}
+
+.vw-panel .vw-panel-tabs {
+  display: flex;
+  gap: var(--size-4-1);
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.vw-panel .vw-panel-tab {
+  background-color: transparent;
+  border: none;
+  border-radius: var(--radius-s) var(--radius-s) 0 0;
+  box-shadow: none;
+  color: var(--text-muted);
+  cursor: var(--cursor);
+  font-size: var(--font-ui-small);
+  padding: var(--size-4-1) var(--size-4-2);
+}
+
+.vw-panel .vw-panel-tab:hover {
+  color: var(--text-normal);
+}
+
+.vw-panel .vw-panel-tab.is-active {
+  background-color: var(--background-modifier-hover);
+  color: var(--text-accent);
+}
+
+.vw-panel .vw-panel-body {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.vw-tab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-3);
+}
+
+.vw-tab .vw-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-2);
+}
+
+.vw-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-1);
+}
+
+.vw-section-title {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  font-weight: var(--font-semibold);
+  text-transform: uppercase;
+}
+
+.vw-note {
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+}
+
+.vw-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-1);
+}
+
+.vw-item {
+  border-bottom: 1px solid var(--background-modifier-border);
+  padding-bottom: var(--size-4-1);
+}
+
+.vw-item-title {
+  color: var(--text-normal);
+  font-size: var(--font-ui-small);
+  overflow-wrap: anywhere;
+}
+
+.vw-item-meta {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+.vw-item-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-4-1);
+  margin-top: var(--size-4-1);
+}
+
+.vw-empty {
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+  padding: var(--size-4-2) 0;
+}
+
+.vw-badge {
+  padding: 0 var(--size-4-1);
+  border-radius: var(--radius-s);
+  background-color: var(--background-modifier-border);
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}

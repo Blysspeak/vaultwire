@@ -12,7 +12,7 @@ export interface ResponseSchema<T> {
   parse(value: unknown): T;
 }
 
-export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 export interface HttpRequest {
   readonly method: HttpMethod;

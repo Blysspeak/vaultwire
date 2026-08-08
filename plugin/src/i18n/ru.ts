@@ -1,19 +1,22 @@
+import { RU_APP } from './ru-app';
+import { RU_CONNECT } from './ru-connect';
+import { RU_CONNECTIONS } from './ru-connections';
+import { RU_OWNER } from './ru-owner';
+import { RU_PANEL } from './ru-panel';
+
 /**
  * Все видимые строки интерфейса. Единственный источник текстов: английский
- * добавляется вторым словарём без раскопок по коду.
+ * добавляется вторым словарём без раскопок по коду. Словарь разбит по разделам,
+ * чтобы ни один файл не перерос предел в 150 строк.
  */
-export const RU = {
+const RU_CORE = {
   'cmd.syncNow': 'Синхронизировать сейчас',
   'cmd.openPanel': 'Открыть панель',
   'cmd.showConflicts': 'Показать конфликты',
 
-  'status.noConnections': 'vaultwire: нет подключений',
-  'status.idle': 'vaultwire: ожидание',
-  'status.pending': 'vaultwire: локальных изменений {count}',
-
+  /** Подписи строки состояния живут в разделе панели: statusbar.* и state.*. */
   'notice.noConnections': 'Подключений нет. Добавьте пространство в настройках.',
   'notice.engineNotReady': 'Движок синхронизации ещё не подключён.',
-  'notice.panelNotReady': 'Панель ещё не подключена.',
   'notice.logCopied': 'Журнал скопирован в буфер обмена.',
   'notice.logCopyFailed': 'Не удалось скопировать журнал.',
   'notice.logEmpty': 'Журнал пуст.',
@@ -54,7 +57,24 @@ export const RU = {
   'log.level.info': 'обычный',
   'log.level.warn': 'предупреждения',
   'log.level.error': 'только ошибки',
+
+  'unit.b': '{count} Б',
+  'unit.kb': '{count} КБ',
+  'unit.mb': '{count} МБ',
+  'unit.gb': '{count} ГБ',
+  'unit.bytes': '{count} Б',
+  'unit.kilobytes': '{count} КБ',
+  'unit.megabytes': '{count} МБ',
 } as const;
+
+export const RU = {
+  ...RU_CORE,
+  ...RU_APP,
+  ...RU_CONNECT,
+  ...RU_CONNECTIONS,
+  ...RU_OWNER,
+  ...RU_PANEL,
+};
 
 export type MessageKey = keyof typeof RU;
 

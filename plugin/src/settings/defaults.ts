@@ -56,7 +56,15 @@ export function createDefaultSettings(): VaultwireSettings {
 /** Поля подключения, которые не приходят от сервера и мастера. */
 type ConnectionIdentity = Pick<
   ConnectionSettings,
-  'spaceId' | 'serverUrl' | 'deviceId' | 'deviceToken' | 'label' | 'localFolder' | 'role' | 'keyEpoch'
+  | 'spaceId'
+  | 'serverUrl'
+  | 'deviceId'
+  | 'deviceToken'
+  | 'label'
+  | 'deviceLabel'
+  | 'localFolder'
+  | 'role'
+  | 'keyEpoch'
 >;
 
 export function createDefaultConnection(identity: ConnectionIdentity): ConnectionSettings {

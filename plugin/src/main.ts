@@ -1,10 +1,22 @@
-import { apiVersion, Notice, Platform, Plugin, type TAbstractFile } from 'obsidian';
+import { apiVersion, Platform, Plugin } from 'obsidian';
+import { registerCommands } from './app/commands';
+import { MassGuard } from './app/mass-guard';
+import { createPanelHost } from './app/panel-host';
+import { openPanel } from './app/panel-open';
+import { ConflictRegistries } from './app/registries';
+import { createSettingsActions, openConnectSpace } from './app/settings-actions';
+import type { ActionsDeps } from './app/settings-actions';
+import { startEngine } from './app/start';
 import { buildDiagnostics } from './diagnostics';
-import { t } from './i18n/ru';
 import { RingLog } from './log';
 import { createDefaultSettings } from './settings/defaults';
 import { VaultwireSettingTab } from './settings/tab';
 import type { VaultwireSettings } from './settings/types';
+import { aggregateStatus, SyncManager } from './sync';
+import { StatusStore } from './ui/panel/store';
+import { VaultwireStatusBar } from './ui/panel/status-bar';
+import { VW_PANEL_VIEW_TYPE } from './ui/panel/types';
+import { VaultwirePanelView } from './ui/panel/view';
 
 /** Период перерисовки строки состояния, мс. */
 const STATUS_REFRESH_MS = 5_000;
@@ -13,68 +25,78 @@ export default class VaultwirePlugin extends Plugin {
   override settings: VaultwireSettings = createDefaultSettings();
   readonly log = new RingLog();
 
-  private statusBar: HTMLElement | null = null;
-  /** Локальные изменения, замеченные с последней синхронизации. */
-  private pendingLocal = 0;
+  /** Движок поднимается на готовой раскладке, до неё его нет. */
+  private manager: SyncManager | null = null;
+  private store: StatusStore | null = null;
 
   override async onload(): Promise<void> {
     await this.loadSettings();
     this.log.info('plugin', 'загрузка', { version: this.manifest.version });
 
-    this.statusBar = this.addStatusBarItem();
-    this.statusBar.addClass('vw-status');
-    this.registerDomEvent(this.statusBar, 'click', () => {
-      this.openPanel();
-    });
-    this.renderStatus();
+    const store = new StatusStore(() => this.manager?.status() ?? aggregateStatus([]));
+    const registries = new ConflictRegistries(
+      this.app.vault.adapter,
+      this.app.vault.configDir,
+      this.log,
+    );
+    this.store = store;
+    const deps = this.actionsDeps(store, registries);
 
-    this.addSettingTab(new VaultwireSettingTab(this.app, this));
-
-    // Горячие клавиши по умолчанию не назначаются, поле hotkeys не задаём.
-    this.addCommand({
-      id: 'sync-now',
-      name: t('cmd.syncNow'),
-      callback: () => {
-        this.syncNow();
+    this.setupStatusBar(store);
+    this.setupPanel(store, registries);
+    this.addSettingTab(new VaultwireSettingTab(this.app, this, createSettingsActions(deps)));
+    registerCommands({
+      app: this.app,
+      plugin: this,
+      settings: this.settings,
+      registries,
+      manager: () => this.manager,
+      connect: () => {
+        openConnectSpace(deps);
       },
-    });
-    this.addCommand({
-      id: 'open-panel',
-      name: t('cmd.openPanel'),
-      callback: () => {
-        this.openPanel();
-      },
-    });
-    this.addCommand({
-      id: 'show-conflicts',
-      name: t('cmd.showConflicts'),
-      callback: () => {
-        this.openPanel('conflicts');
-      },
+      refresh: deps.refresh,
     });
 
+    // Тот же тик спрашивает подтверждение массового удаления: прогон, который
+    // в него упёрся, мог быть запущен таймером или событием хранилища.
+    const guard = new MassGuard(this.app, () => this.manager);
     this.registerInterval(
       window.setInterval(() => {
-        this.renderStatus();
+        store.publish();
+        guard.check();
       }, STATUS_REFRESH_MS),
     );
 
-    // События хранилища регистрируются только после готовности раскладки:
+    // Любой ввод-вывод и подписки на хранилище — только на готовой раскладке:
     // до неё Obsidian досылает create на каждый файл при индексации.
     this.app.workspace.onLayoutReady(() => {
-      this.registerVaultEvents();
+      this.manager = startEngine({
+        app: this.app,
+        settings: this.settings,
+        log: this.log,
+        registries,
+        store,
+        registerInterval: (run, ms) => {
+          this.registerInterval(window.setInterval(run, ms));
+        },
+        registerEvent: (ref) => {
+          this.registerEvent(ref);
+        },
+      });
     });
   }
 
   override onunload(): void {
     // Листы панели не отцепляем: Obsidian восстанавливает их сам при обновлении.
+    // stopAll закрывает канал, снимает таймеры, дописывает индекс и забывает ключи.
+    this.manager?.stopAll();
     this.log.info('plugin', 'выгрузка');
   }
 
   async saveSettings(): Promise<void> {
     await this.saveData(this.settings);
     this.log.setMinLevel(this.settings.logLevel);
-    this.renderStatus();
+    this.store?.publish();
   }
 
   /** Отчёт для поддержки, без секретов и содержимого заметок. */
@@ -86,56 +108,47 @@ export default class VaultwirePlugin extends Plugin {
     });
   }
 
+  private actionsDeps(store: StatusStore, registries: ConflictRegistries): ActionsDeps {
+    return {
+      app: this.app,
+      settings: this.settings,
+      log: this.log,
+      registries,
+      manager: () => this.manager,
+      save: () => this.saveSettings(),
+      refresh: () => {
+        store.publish();
+      },
+    };
+  }
+
+  private setupStatusBar(store: StatusStore): void {
+    const el = this.addStatusBarItem();
+    const bar = new VaultwireStatusBar(el);
+    this.registerDomEvent(el, 'click', () => {
+      void openPanel(this.app);
+    });
+    this.register(
+      store.subscribe((status) => {
+        bar.render(status);
+      }),
+    );
+  }
+
+  /** Фабрика, а не готовый вид: ссылку на созданный лист плагин не держит. */
+  private setupPanel(store: StatusStore, registries: ConflictRegistries): void {
+    const host = createPanelHost({
+      app: this.app,
+      manager: () => this.manager,
+      store,
+      registries,
+    });
+    this.registerView(VW_PANEL_VIEW_TYPE, (leaf) => new VaultwirePanelView(leaf, host));
+  }
+
   private async loadSettings(): Promise<void> {
     const stored = (await this.loadData()) as Partial<VaultwireSettings> | null;
     this.settings = { ...createDefaultSettings(), ...(stored ?? {}) };
     this.log.setMinLevel(this.settings.logLevel);
-  }
-
-  private registerVaultEvents(): void {
-    const vault = this.app.vault;
-    this.registerEvent(vault.on('create', (file) => this.noteLocalChange('create', file)));
-    this.registerEvent(vault.on('modify', (file) => this.noteLocalChange('modify', file)));
-    this.registerEvent(vault.on('delete', (file) => this.noteLocalChange('delete', file)));
-    this.registerEvent(vault.on('rename', (file, oldPath) => {
-      this.noteLocalChange('rename', file, oldPath);
-    }));
-    this.log.debug('vault', 'события хранилища подключены');
-  }
-
-  private noteLocalChange(op: string, file: TAbstractFile, oldPath?: string): void {
-    if (this.settings.connections.length === 0) return;
-    this.pendingLocal += 1;
-    this.log.debug('vault', op, oldPath === undefined ? { path: file.path } : { path: file.path, oldPath });
-    this.renderStatus();
-  }
-
-  private syncNow(): void {
-    if (this.settings.connections.length === 0) {
-      this.log.warn('sync', 'синхронизация без подключений');
-      new Notice(t('notice.noConnections'));
-      return;
-    }
-    this.log.info('sync', 'запрошена ручная синхронизация');
-    new Notice(t('notice.engineNotReady'));
-  }
-
-  private openPanel(tab?: string): void {
-    this.log.info('ui', 'запрошена панель', tab === undefined ? undefined : { tab });
-    new Notice(t('notice.panelNotReady'));
-  }
-
-  private renderStatus(): void {
-    const status = this.statusBar;
-    if (status === null) return;
-    if (this.settings.connections.length === 0) {
-      status.setText(t('status.noConnections'));
-      return;
-    }
-    status.setText(
-      this.pendingLocal === 0
-        ? t('status.idle')
-        : t('status.pending', { count: this.pendingLocal }),
-    );
   }
 }

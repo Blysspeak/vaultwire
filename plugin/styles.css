@@ -1,6 +1,11 @@
-/* vaultwire. Только переменные Obsidian, ни одного литерального цвета. */
+/* Собирается из styles/*.css, правьте их. Только переменные Obsidian. */
+
+/* Строка состояния. */
 
 .vw-status {
+  display: flex;
+  align-items: center;
+  gap: var(--size-4-1);
   cursor: var(--cursor-link);
   color: var(--text-muted);
 }
@@ -8,6 +13,18 @@
 .vw-status:hover {
   color: var(--text-normal);
 }
+
+.vw-status .vw-status-icon {
+  display: flex;
+  align-items: center;
+}
+
+.vw-status .vw-status-icon svg {
+  width: var(--icon-s);
+  height: var(--icon-s);
+}
+
+/* Карточки подключений во вкладке настроек и в панели. */
 
 .vw-settings .vw-connections {
   display: flex;
@@ -61,4 +78,254 @@
   background-color: var(--background-modifier-border);
   color: var(--text-muted);
   font-size: var(--font-ui-smaller);
+}
+
+.vw-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--size-4-2);
+}
+
+.vw-card-head .vw-card-badge {
+  margin-top: 0;
+}
+
+.vw-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-4-1);
+  margin-top: var(--size-4-2);
+}
+
+/* Боковая панель: вкладки, списки операций, проблем и конфликтов. */
+
+.vw-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-3);
+  padding: var(--size-4-3);
+}
+
+.vw-panel .vw-panel-tabs {
+  display: flex;
+  gap: var(--size-4-1);
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.vw-panel .vw-panel-tab {
+  background-color: transparent;
+  border: none;
+  border-radius: var(--radius-s) var(--radius-s) 0 0;
+  box-shadow: none;
+  color: var(--text-muted);
+  cursor: var(--cursor);
+  font-size: var(--font-ui-small);
+  padding: var(--size-4-1) var(--size-4-2);
+}
+
+.vw-panel .vw-panel-tab:hover {
+  color: var(--text-normal);
+}
+
+.vw-panel .vw-panel-tab.is-active {
+  background-color: var(--background-modifier-hover);
+  color: var(--text-accent);
+}
+
+.vw-panel .vw-panel-body {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.vw-tab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-3);
+}
+
+.vw-tab .vw-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-2);
+}
+
+.vw-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-1);
+}
+
+.vw-section-title {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  font-weight: var(--font-semibold);
+  text-transform: uppercase;
+}
+
+.vw-note {
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+}
+
+.vw-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-1);
+}
+
+.vw-item {
+  border-bottom: 1px solid var(--background-modifier-border);
+  padding-bottom: var(--size-4-1);
+}
+
+.vw-item-title {
+  color: var(--text-normal);
+  font-size: var(--font-ui-small);
+  overflow-wrap: anywhere;
+}
+
+.vw-item-meta {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+.vw-item-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-4-1);
+  margin-top: var(--size-4-1);
+}
+
+.vw-empty {
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+  padding: var(--size-4-2) 0;
+}
+
+.vw-badge {
+  padding: 0 var(--size-4-1);
+  border-radius: var(--radius-s);
+  background-color: var(--background-modifier-border);
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+/* Модальные окна: мастер подключения, предпросмотр плана, подтверждения. */
+
+.vw-modal .vw-hint,
+.vw-modal .vw-card,
+.vw-modal .vw-plan-list {
+  margin-top: var(--size-4-3);
+}
+
+.vw-error {
+  color: var(--text-error);
+  font-size: var(--font-ui-small);
+  padding: var(--size-4-1) 0;
+}
+
+.vw-plan-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-1);
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
+.vw-plan-row {
+  display: flex;
+  gap: var(--size-4-2);
+  line-height: var(--line-height-tight);
+}
+
+.vw-plan-kind {
+  flex: 0 0 auto;
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+.vw-plan-path {
+  color: var(--text-normal);
+  font-size: var(--font-ui-small);
+  overflow-wrap: anywhere;
+}
+
+.vw-suggestion {
+  overflow-wrap: anywhere;
+}
+
+.vw-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--size-4-2);
+  margin-top: var(--size-4-4);
+}
+
+.vw-modal-status {
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+  min-height: var(--size-4-4);
+  margin-top: var(--size-4-3);
+  overflow-wrap: anywhere;
+}
+
+.vw-confirm-body {
+  color: var(--text-normal);
+  font-size: var(--font-ui-small);
+  margin: 0;
+}
+
+/* Вкладка участников и сводка пространства (владелец). */
+
+.vw-members {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-2);
+}
+
+.vw-members-toolbar,
+.vw-member-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-4-1);
+}
+
+.vw-members-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-2);
+}
+
+.vw-member {
+  border-bottom: 1px solid var(--background-modifier-border);
+  padding-bottom: var(--size-4-2);
+}
+
+.vw-member-head {
+  display: flex;
+  align-items: center;
+  gap: var(--size-4-2);
+}
+
+.vw-member-label {
+  color: var(--text-normal);
+  font-size: var(--font-ui-small);
+  font-weight: var(--font-semibold);
+  overflow-wrap: anywhere;
+}
+
+.vw-member-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-4-2);
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  margin-bottom: var(--size-4-1);
+}
+
+.vw-space-info {
+  margin-bottom: var(--size-4-2);
 }

@@ -1,0 +1,23 @@
+/* Строка состояния. */
+
+.vw-status {
+  display: flex;
+  align-items: center;
+  gap: var(--size-4-1);
+  cursor: var(--cursor-link);
+  color: var(--text-muted);
+}
+
+.vw-status:hover {
+  color: var(--text-normal);
+}
+
+.vw-status .vw-status-icon {
+  display: flex;
+  align-items: center;
+}
+
+.vw-status .vw-status-icon svg {
+  width: var(--icon-s);
+  height: var(--icon-s);
+}

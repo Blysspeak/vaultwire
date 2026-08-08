@@ -1,9 +1,11 @@
-import { Notice, PluginSettingTab, Setting, type App } from 'obsidian';
+import { PluginSettingTab, Setting, type App } from 'obsidian';
 import { t } from '../i18n/ru';
-import { LOG_LEVELS, type LogLevel } from '../log';
 import type VaultwirePlugin from '../main';
-import { renderConnectionsList } from './connections-list';
+import { NO_ACTIONS } from './actions';
+import type { ConnectionsDeps, SettingsActions } from './actions';
+import { renderConnectionsSection } from './connections-section';
 import { SETTINGS_BOUNDS } from './defaults';
+import { renderDiagnosticsSection } from './diagnostics-section';
 
 const MB = 1024 * 1024;
 
@@ -11,6 +13,8 @@ export class VaultwireSettingTab extends PluginSettingTab {
   constructor(
     app: App,
     private readonly plugin: VaultwirePlugin,
+    /** Движок и мастер подключения приезжают из main.ts после их сборки. */
+    private readonly actions: SettingsActions = NO_ACTIONS,
   ) {
     super(app, plugin);
   }
@@ -20,10 +24,22 @@ export class VaultwireSettingTab extends PluginSettingTab {
     root.empty();
     root.addClass('vw-settings');
     // Общая секция сверху идёт без заголовка (раздел 8).
-    renderConnectionsList(root, this.plugin.settings.connections);
+    renderConnectionsSection(root, this.connectionsDeps());
     this.renderLimits(root);
     this.renderServer(root);
     this.renderDiagnostics(root);
+  }
+
+  private connectionsDeps(): ConnectionsDeps {
+    return {
+      app: this.app,
+      settings: this.plugin.settings,
+      actions: this.actions,
+      save: () => this.plugin.saveSettings(),
+      refresh: () => {
+        this.display();
+      },
+    };
   }
 
   private renderLimits(root: HTMLElement): void {
@@ -95,44 +111,12 @@ export class VaultwireSettingTab extends PluginSettingTab {
   }
 
   private renderDiagnostics(root: HTMLElement): void {
-    new Setting(root).setName(t('settings.diagnostics.heading')).setHeading();
-
-    new Setting(root)
-      .setName(t('settings.logLevel.name'))
-      .setDesc(t('settings.logLevel.desc'))
-      .addDropdown((dropdown) => {
-        for (const level of LOG_LEVELS) dropdown.addOption(level, t(`log.level.${level}`));
-        dropdown.setValue(this.plugin.settings.logLevel);
-        dropdown.onChange(async (value) => {
-          this.plugin.settings.logLevel = value as LogLevel;
-          await this.plugin.saveSettings();
-        });
-      });
-
-    new Setting(root)
-      .setName(t('settings.copyLog.name'))
-      .setDesc(t('settings.copyLog.desc'))
-      .addButton((button) => {
-        button.setButtonText(t('settings.copyLog.button'));
-        button.onClick(() => {
-          void this.copyDiagnostics();
-        });
-      });
-  }
-
-  private async copyDiagnostics(): Promise<void> {
-    const report = this.plugin.diagnostics();
-    if (report.length === 0) {
-      new Notice(t('notice.logEmpty'));
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(report);
-      new Notice(t('notice.logCopied'));
-    } catch {
-      this.plugin.log.warn('settings', 'буфер обмена недоступен');
-      new Notice(t('notice.logCopyFailed'));
-    }
+    renderDiagnosticsSection(root, {
+      settings: this.plugin.settings,
+      log: this.plugin.log,
+      report: () => this.plugin.diagnostics(),
+      save: () => this.plugin.saveSettings(),
+    });
   }
 }
 

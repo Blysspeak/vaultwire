@@ -1,0 +1,146 @@
+# ВНИМАНИЕ: workflow рассчитан на настроенный self-hosted runner с метками
+# [self-hosted, vaultwire] и на подготовленный по deploy/README.md сервер
+# (чекаут в /root/project/vaultwire, .env, база, pm2, nginx). Пока раннера нет,
+# job'ы будут висеть в очереди и не запустятся вовсе — это ожидаемо, а не поломка.
+# Порядок первого включения описан в server/deploy/README.md.
+
+name: Server
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'server/**'
+      - 'shared/**'
+      - '.github/workflows/server.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-vaultwire-server
+  cancel-in-progress: false
+
+jobs:
+  # Гейт выкладки: при красных проверках deploy получает skipped и прод не трогается.
+  check:
+    runs-on: [self-hosted, vaultwire]
+    env:
+      # Заглушка, не секрет: модульные тесты базы не касаются, но config.ts падает
+      # без DATABASE_URL уже на импорте логгера. Реальная строка живёт в .env на сервере.
+      DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/vaultwire_ci
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      # shared собирается первым: server видит его через симлинк file:../shared,
+      # а dist в git не хранится — без сборки не разрешатся типы протокола.
+      - name: Install and build shared
+        run: |
+          cd shared
+          npm ci
+          npm run build
+
+      - name: Install server dependencies
+        run: |
+          cd server
+          npm ci
+
+      - name: Generate Prisma client
+        run: |
+          cd server
+          npx prisma generate
+
+      - name: Typecheck
+        run: |
+          cd server
+          npx tsc --noEmit
+
+      - name: Tests
+        run: |
+          cd server
+          npx vitest run --passWithNoTests
+
+  deploy:
+    needs: check
+    runs-on: [self-hosted, vaultwire]
+    steps:
+      - name: Record rollback point
+        run: |
+          cd /root/project/vaultwire
+          git rev-parse HEAD > /tmp/vaultwire-prev-server
+
+      # Лок общий на все выкладки репозитория: параллельный git reset в одном
+      # чекауте оставляет дерево в перемешанном состоянии.
+      - name: Pull latest code
+        run: |
+          exec 9>/tmp/vaultwire-deploy.lock
+          flock -w 300 9 || { echo "не удалось взять лок выкладки за 300с"; exit 1; }
+          cd /root/project/vaultwire
+          git fetch origin main --force
+          git reset --hard origin/main
+
+      - name: Build shared and install server dependencies
+        run: |
+          cd /root/project/vaultwire/shared
+          npm ci
+          npm run build
+          cd /root/project/vaultwire/server
+          # Без --omit=dev: рантайм tsx и CLI prisma лежат в devDependencies,
+          # build-шага у сервера нет и на проде они нужны оба.
+          npm ci
+
+      - name: Apply migrations
+        run: |
+          cd /root/project/vaultwire/server
+          # DATABASE_URL берётся из .env рядом: prisma CLI читает его сам,
+          # поэтому строка подключения нигде в workflow не появляется.
+          ./node_modules/.bin/prisma generate
+          ./node_modules/.bin/prisma migrate deploy
+
+      - name: Restart pm2
+        run: |
+          cd /root/project/vaultwire/server
+          pm2 delete vaultwire-server 2>/dev/null || true
+          pm2 start deploy/ecosystem.config.cjs
+          pm2 save
+
+      # Первый старт после npm ci идёт по холодному кэшу tsx и самый медленный,
+      # поэтому окно ожидания взято с запасом.
+      - name: Health check
+        run: |
+          for i in $(seq 1 40); do
+            sleep 3
+            if curl -sf --max-time 4 http://127.0.0.1:8787/health; then
+              echo "проверка живости прошла с попытки $i"
+              exit 0
+            fi
+          done
+          echo "проверка живости не прошла за ~120с"
+          exit 1
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          PREV=$(cat /tmp/vaultwire-prev-server) || { echo "нет точки отката"; exit 1; }
+          echo "выкладка упала, откат сервера на $PREV"
+          echo "ВНИМАНИЕ: миграции базы не откатываются, политика forward-only"
+          cd /root/project/vaultwire
+          git reset --hard "$PREV"
+          cd shared && npm ci && npm run build
+          cd ../server
+          npm ci
+          ./node_modules/.bin/prisma generate
+          pm2 delete vaultwire-server 2>/dev/null || true
+          pm2 start deploy/ecosystem.config.cjs
+          pm2 save
+          for i in $(seq 1 40); do
+            sleep 3
+            if curl -sf --max-time 4 http://127.0.0.1:8787/health; then
+              echo "откат здоров, попытка $i"
+              exit 0
+            fi
+          done
+          echo "ОТКАТ НЕ ПОДНЯЛСЯ, нужно вмешательство руками"
+          exit 1

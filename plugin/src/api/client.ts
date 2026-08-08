@@ -20,12 +20,19 @@ import { HttpClient } from './http';
 import type { HttpClientOptions, HttpResult } from './http';
 import * as paths from './paths';
 
+/**
+ * Тело создания пространства. Верификатор зависит от spaceId, который выдаёт
+ * сервер, поэтому при создании он необязателен и доезжает отдельным PATCH.
+ */
+export type CreateSpaceBody = Omit<vw.CreateSpaceRequest, 'salt' | 'verifier'> &
+  Partial<Pick<vw.CreateSpaceRequest, 'salt' | 'verifier'>>;
+
 /** Клиент протокола раздела 3. Каждый ответ проходит схему shared перед возвратом. */
 export class VaultwireClient {
   constructor(private readonly http: HttpClient) {}
 
   /** POST /v1/spaces, авторизация bootstrap-токеном сервера. */
-  createSpace(request: vw.CreateSpaceRequest, bootstrapToken: string): Promise<vw.CreateSpaceResponse> {
+  createSpace(request: CreateSpaceBody, bootstrapToken: string): Promise<vw.CreateSpaceResponse> {
     const path = paths.spacesPath();
     return this.http.json(
       { method: 'POST', path, json: request, token: bootstrapToken },
@@ -42,6 +49,12 @@ export class VaultwireClient {
   getSpace(spaceId: vw.SpaceId): Promise<vw.GetSpaceResponse> {
     const path = paths.spacePath(spaceId);
     return this.http.json({ method: 'GET', path }, getSpaceResponseSchema);
+  }
+
+  /** PATCH /v1/spaces/{id} — установка верификатора сразу после создания, только владелец. */
+  setSpaceVerifier(spaceId: vw.SpaceId, verifier: string): Promise<vw.GetSpaceResponse> {
+    const path = paths.spacePath(spaceId);
+    return this.http.json({ method: 'PATCH', path, json: { verifier } }, getSpaceResponseSchema);
   }
 
   /** GET /v1/spaces/{id}/changes — только метаданные, тела тянутся отдельно. */

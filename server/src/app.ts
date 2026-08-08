@@ -10,6 +10,7 @@ import { blobsRoutes } from '#routes/blobs';
 import { changesRoutes } from '#routes/changes';
 import { devicesRoutes } from '#routes/devices';
 import { docsRoutes } from '#routes/docs';
+import { healthRoutes } from '#routes/health';
 import { invitesRoutes } from '#routes/invites';
 import { spacesRoutes } from '#routes/spaces';
 import { syncWsRoutes } from '#routes/sync-ws';
@@ -51,6 +52,9 @@ export async function buildApp(): Promise<FastifyInstance> {
   app.setNotFoundHandler((_request, reply) =>
     reply.status(404).send(new ProtocolError('not_found', 'маршрут не найден').toBody()),
   );
+
+  // Проверка живости вне /v1: она не часть протокола и переживёт смену его версии.
+  await app.register(healthRoutes);
 
   // HTTP-часть протокола целиком живёт под /v1.
   await app.register(

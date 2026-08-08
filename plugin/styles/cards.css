@@ -1,0 +1,73 @@
+/* Карточки подключений во вкладке настроек и в панели. */
+
+.vw-settings .vw-connections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-2);
+  margin-bottom: var(--size-4-4);
+}
+
+.vw-connections-empty {
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+  padding: var(--size-4-2) 0;
+}
+
+.vw-card {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  background-color: var(--background-secondary);
+  padding: var(--size-4-3);
+}
+
+.vw-card-title {
+  font-weight: var(--font-semibold);
+  color: var(--text-normal);
+  margin-bottom: var(--size-4-2);
+}
+
+.vw-card-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--size-4-2);
+  font-size: var(--font-ui-small);
+  line-height: var(--line-height-tight);
+}
+
+.vw-card-key {
+  color: var(--text-muted);
+}
+
+.vw-card-value {
+  color: var(--text-normal);
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.vw-card-badge {
+  display: inline-block;
+  margin-top: var(--size-4-2);
+  padding: 0 var(--size-4-2);
+  border-radius: var(--radius-s);
+  background-color: var(--background-modifier-border);
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+.vw-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--size-4-2);
+}
+
+.vw-card-head .vw-card-badge {
+  margin-top: 0;
+}
+
+.vw-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-4-1);
+  margin-top: var(--size-4-2);
+}

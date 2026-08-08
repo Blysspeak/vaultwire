@@ -1,0 +1,51 @@
+/* Вкладка участников и сводка пространства (владелец). */
+
+.vw-members {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-2);
+}
+
+.vw-members-toolbar,
+.vw-member-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-4-1);
+}
+
+.vw-members-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-2);
+}
+
+.vw-member {
+  border-bottom: 1px solid var(--background-modifier-border);
+  padding-bottom: var(--size-4-2);
+}
+
+.vw-member-head {
+  display: flex;
+  align-items: center;
+  gap: var(--size-4-2);
+}
+
+.vw-member-label {
+  color: var(--text-normal);
+  font-size: var(--font-ui-small);
+  font-weight: var(--font-semibold);
+  overflow-wrap: anywhere;
+}
+
+.vw-member-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-4-2);
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  margin-bottom: var(--size-4-1);
+}
+
+.vw-space-info {
+  margin-bottom: var(--size-4-2);
+}
