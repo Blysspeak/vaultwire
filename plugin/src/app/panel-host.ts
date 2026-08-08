@@ -8,7 +8,7 @@ import type { TrashItem } from '../history/trash';
 import type { SyncManager } from '../sync';
 import { vaultPath } from '../sync/paths';
 import type { StatusStore } from '../ui/panel/store';
-import type { PanelHost } from '../ui/panel/types';
+import type { PanelActions, PanelHost } from '../ui/panel/types';
 import { historyDepsOf } from './history-deps';
 import type { ConflictRegistries } from './registries';
 
@@ -18,6 +18,8 @@ export interface PanelHostDeps {
   readonly manager: () => SyncManager | null;
   readonly store: StatusStore;
   readonly registries: ConflictRegistries;
+  /** Мастера и модальные окна: панель их только зовёт. */
+  readonly actions: PanelActions;
 }
 
 /** Всё, что панель просит у плагина. Сама она не знает ни о реестре, ни о клиенте. */
@@ -36,23 +38,10 @@ export function createPanelHost(deps: PanelHostDeps): PanelHost {
   };
 
   return {
+    actions: deps.actions,
     status: () => deps.store.status,
     subscribe: (listener) => deps.store.subscribe(listener),
     report: (spaceId) => deps.manager()?.connection(spaceId)?.lastReport ?? null,
-    syncNow: (spaceId) =>
-      run(async (manager) => {
-        await manager.syncNow(spaceId);
-      }),
-    pause: (spaceId) => {
-      void run((manager) => {
-        manager.pause(spaceId);
-      });
-    },
-    resume: (spaceId) => {
-      void run((manager) => {
-        manager.resume(spaceId);
-      });
-    },
     // Точечного повтора одного документа в очереди нет: повторяем весь прогон.
     retry: (spaceId) =>
       run(async (manager) => {

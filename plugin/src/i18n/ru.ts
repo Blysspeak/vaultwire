@@ -21,7 +21,10 @@ const RU_CORE = {
   'notice.logCopyFailed': 'Не удалось скопировать журнал.',
   'notice.logEmpty': 'Журнал пуст.',
 
+  'settings.openPanel': 'Открыть панель',
   'settings.connections.empty': 'Подключений нет.',
+  'settings.connections.managedInPanel':
+    'Подключение, создание и управление живут в боковой панели.',
   'settings.connections.folder': 'Папка',
   'settings.connections.folderRoot': 'корень хранилища',
   'settings.connections.server': 'Сервер',

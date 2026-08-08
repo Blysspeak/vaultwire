@@ -16,10 +16,6 @@ export const RU_CONNECTIONS = {
   'settings.connections.disconnect': 'Отключить',
   /** Подпись кнопки мастера подключения лежит в его же разделе: connect.open. */
   'settings.connections.create': 'Создать пространство',
-  'settings.connections.connectDesc': 'Код подключения выдаёт владелец пространства.',
-  'settings.connections.createDesc': 'Новое пространство на сервере из выбранной папки.',
-  'settings.connections.createNeedsToken':
-    'Нужен bootstrap-токен сервера, он задаётся ниже в разделе «Сервер».',
 
   'connSettings.title': 'Настройки подключения',
   'connSettings.include.name': 'Маски включения',
@@ -50,6 +46,5 @@ export const RU_CONNECTIONS = {
   'notice.paused': 'Подключение приостановлено.',
   'notice.resumed': 'Подключение возобновлено.',
   'notice.syncStarted': 'Синхронизация запущена.',
-  'notice.connectNotReady': 'Мастер подключения ещё не подключён.',
   'notice.copyFailed': 'Не удалось скопировать.',
 } as const;

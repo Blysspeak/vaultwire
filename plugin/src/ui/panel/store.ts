@@ -27,6 +27,15 @@ export class StatusStore {
     };
   }
 
+  /**
+   * Разослать текущее состояние принудительно: настройки плагина в SyncStatus не
+   * попадают, а панель показывает и их — например доступность создания пространства.
+   */
+  notify(): void {
+    this.current = this.read();
+    for (const listener of this.listeners) listener(this.current);
+  }
+
   /** Пересчитать состояние и разослать подписчикам, если оно сдвинулось. */
   publish(): void {
     const next = this.read();

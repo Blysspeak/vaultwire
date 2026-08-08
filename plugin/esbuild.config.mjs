@@ -10,7 +10,14 @@ const prod = process.argv[2] === 'production';
  * не длиннее 150 строк. Поэтому стили лежат в styles/ по разделам, а корневой
  * styles.css собирается из них склейкой и правится только через них.
  */
-const STYLE_PARTS = ['status.css', 'cards.css', 'panel.css', 'modal.css', 'members.css'];
+const STYLE_PARTS = [
+  'status.css',
+  'cards.css',
+  'panel.css',
+  'head.css',
+  'modal.css',
+  'members.css',
+];
 
 function buildStyles() {
   const head = '/* Собирается из styles/*.css, правьте их. Только переменные Obsidian. */\n';

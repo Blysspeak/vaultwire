@@ -1,19 +1,27 @@
+import type { SpaceId } from '@vaultwire/shared';
 import { ItemView, type IconName, type WorkspaceLeaf } from 'obsidian';
 import { t } from '../../i18n/ru';
-import { createActivityTab } from './tab-activity';
-import { createConflictsTab } from './tab-conflicts';
-import { createTrashTab } from './tab-trash';
-import { PANEL_TABS, VW_PANEL_VIEW_TYPE } from './types';
+import type { SyncStatus } from '../../sync/status';
+import { pickConnection, resolveActive, scopeStatus } from './scope';
+import { VW_PANEL_VIEW_TYPE } from './types';
 import type { PanelHost, PanelTab, PanelTabView } from './types';
+import { createParts } from './view-parts';
+import type { PanelParts } from './view-parts';
+import { createTab, tabVisible } from './view-tabs';
 
 const PANEL_ICON: IconName = 'refresh-cw';
 
-/** Боковая панель с вкладками активности, конфликтов и корзины (раздел 8). */
+/**
+ * Боковая панель: шапка активного подключения и вкладки под ней. Перерисовка
+ * точечная — на событие состояния правятся только тексты шапки и активная
+ * вкладка, разметка пересобирается лишь при смене подключения или вкладки.
+ */
 export class VaultwirePanelView extends ItemView {
   private readonly tabs = new Map<PanelTab, PanelTabView>();
-  private readonly buttons = new Map<PanelTab, HTMLElement>();
-  private body: HTMLElement | null = null;
+  private parts: PanelParts | null = null;
   private active: PanelTab = 'activity';
+  private space: SpaceId | null = null;
+  private status: SyncStatus;
   private unsubscribe: (() => void) | null = null;
 
   constructor(
@@ -23,6 +31,7 @@ export class VaultwirePanelView extends ItemView {
     super(leaf);
     // Панель не открывает файлы и никуда не уводит.
     this.navigation = false;
+    this.status = host.status();
   }
 
   override getViewType(): string {
@@ -41,64 +50,99 @@ export class VaultwirePanelView extends ItemView {
     const root = this.contentEl;
     root.empty();
     root.addClass('vw-panel');
-    this.renderTabBar(root);
-    this.body = root.createDiv({ cls: 'vw-panel-body' });
-    // Подписка на агрегированное состояние: обновляется только активная вкладка.
-    this.unsubscribe = this.host.subscribe((status) => {
-      this.tabs.get(this.active)?.update(status);
+    this.parts = createParts(root, this.host.actions, {
+      pick: (spaceId) => {
+        this.pick(spaceId);
+      },
+      select: (tab) => {
+        this.select(tab);
+      },
     });
-    this.select(this.active);
+    this.unsubscribe = this.host.subscribe((status) => {
+      this.apply(status);
+    });
   }
 
   protected override async onClose(): Promise<void> {
     this.unsubscribe?.();
     this.unsubscribe = null;
-    for (const tab of this.tabs.values()) tab.dispose?.();
-    this.tabs.clear();
-    this.buttons.clear();
-    this.body = null;
+    this.dropTabs();
+    this.parts = null;
     this.contentEl.empty();
   }
 
-  /** Открытие на нужной вкладке: команда «показать конфликты» и клик по строке состояния. */
+  /** Открытие на нужной вкладке: команда «показать конфликты» и строка состояния. */
   select(tab: PanelTab): void {
     this.active = tab;
-    for (const [name, button] of this.buttons) button.toggleClass('is-active', name === tab);
-    const body = this.body;
-    if (body === null) return;
-    body.empty();
-    const view = this.ensure(tab);
-    body.appendChild(view.el);
-    view.update(this.host.status());
+    this.parts?.bar.update(tab, (item) => this.visible(item));
+    this.mount();
+  }
+
+  private pick(spaceId: SpaceId): void {
+    if (spaceId === this.space) return;
+    this.space = spaceId;
+    this.dropTabs();
+    this.apply(this.status);
+  }
+
+  private apply(status: SyncStatus): void {
+    this.status = status;
+    const next = resolveActive(status, this.space);
+    if (next !== this.space) {
+      this.space = next;
+      this.dropTabs();
+    }
+    const parts = this.parts;
+    if (parts === null) return;
+    parts.header.update(status, this.space);
+    parts.empty.el.toggle(this.space === null);
+    parts.empty.update();
+    parts.bar.el.toggle(this.space !== null);
+    if (!this.visible(this.active)) this.active = 'activity';
+    parts.bar.update(this.active, (tab) => this.visible(tab));
+    this.mount();
+  }
+
+  /**
+   * Смонтированная вкладка получает свежее состояние; пересборка тела нужна
+   * только когда вкладка сменилась или её создали заново.
+   */
+  private mount(): void {
+    const parts = this.parts;
+    if (parts === null) return;
+    const view = this.space === null ? null : this.ensure(this.active, this.space);
+    if (view === null) {
+      parts.body.empty();
+      return;
+    }
+    const scoped = scopeStatus(this.status, this.space);
+    if (view.el.parentElement === parts.body) {
+      view.update(scoped);
+      return;
+    }
+    parts.body.empty();
+    parts.body.appendChild(view.el);
+    view.update(scoped);
     view.activate?.();
   }
 
-  private renderTabBar(root: HTMLElement): void {
-    const bar = root.createDiv({ cls: 'vw-panel-tabs' });
-    for (const tab of PANEL_TABS) {
-      const button = bar.createEl('button', {
-        cls: 'vw-panel-tab',
-        text: t(`panel.tab.${tab}`),
-      });
-      this.registerDomEvent(button, 'click', () => {
-        this.select(tab);
-      });
-      this.buttons.set(tab, button);
-    }
+  private visible(tab: PanelTab): boolean {
+    return tabVisible(tab, pickConnection(this.status, this.space));
   }
 
-  /** Вкладка создаётся один раз: переключение не пересобирает её разметку. */
-  private ensure(tab: PanelTab): PanelTabView {
+  /** Вкладка создаётся один раз на подключение: переключение её не пересобирает. */
+  private ensure(tab: PanelTab, spaceId: SpaceId): PanelTabView | null {
     const existing = this.tabs.get(tab);
     if (existing !== undefined) return existing;
-    const created = this.create(tab);
-    this.tabs.set(tab, created);
+    const created = createTab(tab, this.host, this.app, spaceId);
+    if (created !== null) this.tabs.set(tab, created);
     return created;
   }
 
-  private create(tab: PanelTab): PanelTabView {
-    if (tab === 'conflicts') return createConflictsTab(this.host, this.app);
-    if (tab === 'trash') return createTrashTab(this.host);
-    return createActivityTab(this.host);
+  /** Смена подключения: вкладки собраны под конкретное пространство. */
+  private dropTabs(): void {
+    for (const tab of this.tabs.values()) tab.dispose?.();
+    this.tabs.clear();
+    this.parts?.body.empty();
   }
 }

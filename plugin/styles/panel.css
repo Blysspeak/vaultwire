@@ -5,6 +5,8 @@
   flex-direction: column;
   gap: var(--size-4-3);
   padding: var(--size-4-3);
+  /* Шапка и вкладки стоят на месте, прокручивается только тело. */
+  height: 100%;
 }
 
 .vw-panel .vw-panel-tabs {
@@ -35,8 +37,37 @@
 
 .vw-panel .vw-panel-body {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
+  min-height: 0;
   overflow-y: auto;
+}
+
+.vw-panel .vw-panel-foot {
+  border-top: 1px solid var(--background-modifier-border);
+  padding-top: var(--size-4-2);
+}
+
+.vw-panel-foot-link {
+  color: var(--text-faint);
+  cursor: var(--cursor-link);
+  font-size: var(--font-ui-smaller);
+}
+
+.vw-panel-foot-link:hover {
+  color: var(--text-muted);
+}
+
+.vw-panel-empty {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-2);
+}
+
+.vw-panel-empty .vw-panel-empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-4-2);
 }
 
 .vw-tab {

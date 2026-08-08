@@ -1,0 +1,93 @@
+/* Шапка панели: активное подключение, его состояние и кнопки управления. */
+
+.vw-panel-head {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: var(--size-4-1);
+}
+
+.vw-panel-head .vw-head-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--size-4-2);
+}
+
+.vw-panel-head .vw-head-picker {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.vw-head-label {
+  color: var(--text-normal);
+  font-weight: var(--font-semibold);
+  overflow-wrap: anywhere;
+}
+
+.vw-head-select {
+  max-width: 100%;
+  font-size: var(--font-ui-small);
+}
+
+.vw-head-actions {
+  /* Размер значков задаётся переменной, а не пикселями в разметке. */
+  --icon-size: var(--icon-s);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-4-1);
+}
+
+.vw-icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--size-4-1);
+  border: none;
+  border-radius: var(--radius-s);
+  box-shadow: none;
+  background-color: transparent;
+  color: var(--text-muted);
+  cursor: var(--cursor);
+}
+
+.vw-icon-button:hover {
+  background-color: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.vw-phone .vw-head-actions {
+  --icon-size: var(--icon-m);
+  width: 100%;
+}
+
+.vw-phone .vw-head-picker {
+  flex: 1 0 100%;
+}
+
+.vw-head-state {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--size-4-2);
+}
+
+.vw-head-badge {
+  padding: 0 var(--size-4-2);
+  border-radius: var(--radius-s);
+  background-color: var(--background-modifier-border);
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+.vw-head-meta {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  overflow-wrap: anywhere;
+}
+
+.vw-head-awaiting {
+  color: var(--text-warning);
+  font-size: var(--font-ui-smaller);
+}

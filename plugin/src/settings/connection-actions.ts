@@ -21,8 +21,11 @@ export function syncConnection(deps: ConnectionsDeps, connection: ConnectionSett
  * Пауза и возобновление. Флаг autoSync переживает перезапуск, поэтому меняется
  * вместе с состоянием реестра: иначе пауза забывалась бы при следующем запуске.
  */
-export function toggleConnection(deps: ConnectionsDeps, connection: ConnectionSettings): void {
-  const paused = connection.autoSync;
+export function setConnectionPaused(
+  deps: ConnectionsDeps,
+  connection: ConnectionSettings,
+  paused: boolean,
+): void {
   connection.autoSync = !paused;
   const manager = deps.actions.manager();
   if (paused) manager?.pause(connection.spaceId);

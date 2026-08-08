@@ -21,9 +21,6 @@ export interface ActionsDeps {
 export function createSettingsActions(deps: ActionsDeps): SettingsActions {
   return {
     manager: () => deps.manager(),
-    connectSpace: () => {
-      openConnectSpace(deps);
-    },
   };
 }
 

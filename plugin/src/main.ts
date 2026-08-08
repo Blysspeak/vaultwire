@@ -1,6 +1,7 @@
 import { apiVersion, Platform, Plugin } from 'obsidian';
 import { registerCommands } from './app/commands';
 import { MassGuard } from './app/mass-guard';
+import { createPanelActions } from './app/panel-actions';
 import { ConflictRegistries } from './app/registries';
 import { createSettingsActions, openConnectSpace } from './app/settings-actions';
 import type { ActionsDeps } from './app/settings-actions';
@@ -38,12 +39,14 @@ export default class VaultwirePlugin extends Plugin {
     );
     this.store = store;
     const deps = this.actionsDeps(store, registries);
+    const actions = createPanelActions({ ...deps, pluginId: this.manifest.id });
 
     const surface: SurfaceDeps = {
       app: this.app,
       plugin: this,
       store,
       registries,
+      actions,
       manager: () => this.manager,
     };
     mountStatusBar(surface);
@@ -103,7 +106,8 @@ export default class VaultwirePlugin extends Plugin {
   async saveSettings(): Promise<void> {
     await this.saveData(this.settings);
     this.log.setMinLevel(this.settings.logLevel);
-    this.store?.publish();
+    // Принудительно: панель показывает и настройки, а в SyncStatus они не попадают.
+    this.store?.notify();
   }
 
   /** Отчёт для поддержки, без секретов и содержимого заметок. */

@@ -8,6 +8,15 @@ export const RU_PANEL = {
   'panel.tab.members': 'Участники',
   'panel.empty': 'Подключений нет.',
   'panel.never': 'ни разу',
+  'panel.pick': 'Активное подключение',
+  'panel.openSettings': 'Настройки плагина',
+  'panel.head.lastRun': 'прогон {when}',
+  'panel.head.queue': 'в очереди {count}',
+  'panel.head.conflicts': 'конфликтов {count}',
+  'panel.empty.desc':
+    'Подключений нет. Подключите пространство по коду от владельца или создайте своё.',
+  'panel.empty.needsToken':
+    'Создание пространства требует bootstrap-токен: он задаётся в настройках плагина.',
 
   'state.idle': 'ожидание',
   'state.syncing': 'синхронизация',

@@ -7,6 +7,7 @@ import type { ConflictRegistries } from './registries';
 import type { StatusStore } from '../ui/panel/store';
 import { VaultwireStatusBar } from '../ui/panel/status-bar';
 import { VW_PANEL_VIEW_TYPE } from '../ui/panel/types';
+import type { PanelActions } from '../ui/panel/types';
 import { VaultwirePanelView } from '../ui/panel/view';
 
 export interface SurfaceDeps {
@@ -14,6 +15,8 @@ export interface SurfaceDeps {
   readonly plugin: Plugin;
   readonly store: StatusStore;
   readonly registries: ConflictRegistries;
+  /** Оперативные действия панели: подключение, создание, управление. */
+  readonly actions: PanelActions;
   manager(): SyncManager | null;
 }
 
@@ -49,6 +52,7 @@ export function mountPanel(deps: SurfaceDeps): void {
     manager: deps.manager,
     store: deps.store,
     registries: deps.registries,
+    actions: deps.actions,
   });
   deps.plugin.registerView(VW_PANEL_VIEW_TYPE, (leaf) => new VaultwirePanelView(leaf, host));
 }
