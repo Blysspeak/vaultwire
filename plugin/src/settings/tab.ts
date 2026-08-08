@@ -104,8 +104,14 @@ export class VaultwireSettingTab extends PluginSettingTab {
         text.inputEl.type = 'password';
         text.setValue(this.plugin.settings.bootstrapToken);
         text.onChange(async (raw) => {
+          const had = this.plugin.settings.bootstrapToken.length > 0;
           this.plugin.settings.bootstrapToken = raw.trim();
           await this.plugin.saveSettings();
+          // Кнопка создания пространства живёт выше по странице и зависит от
+          // наличия токена. Перерисовываем ровно в момент смены признака, а не
+          // на каждый символ: иначе ввод рвётся на первом же нажатии.
+          const has = this.plugin.settings.bootstrapToken.length > 0;
+          if (had !== has) this.display();
         });
       });
   }

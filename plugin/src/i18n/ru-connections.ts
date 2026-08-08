@@ -18,6 +18,8 @@ export const RU_CONNECTIONS = {
   'settings.connections.create': 'Создать пространство',
   'settings.connections.connectDesc': 'Код подключения выдаёт владелец пространства.',
   'settings.connections.createDesc': 'Новое пространство на сервере из выбранной папки.',
+  'settings.connections.createNeedsToken':
+    'Нужен bootstrap-токен сервера, он задаётся ниже в разделе «Сервер».',
 
   'connSettings.title': 'Настройки подключения',
   'connSettings.include.name': 'Маски включения',

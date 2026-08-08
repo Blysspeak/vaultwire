@@ -22,15 +22,22 @@ export function renderConnectionsSection(root: HTMLElement, deps: ConnectionsDep
       });
     });
 
-  // Создание доступно только при заданном bootstrap-токене сервера.
-  if (deps.settings.bootstrapToken.length === 0) return;
+  // Создание требует bootstrap-токена сервера. Кнопка показывается всегда и
+  // просто гаснет без токена: прятать её нельзя, потому что токен вводится ниже
+  // на этой же странице, а вкладка настроек сама себя не перерисовывает, и
+  // исчезнувшее действие выглядит как поломка.
+  const hasToken = deps.settings.bootstrapToken.length > 0;
   new Setting(root)
     .setName(t('settings.connections.create'))
-    .setDesc(t('settings.connections.createDesc'))
+    .setDesc(hasToken ? t('settings.connections.createDesc') : t('settings.connections.createNeedsToken'))
     .addButton((button) => {
-      button.setButtonText(t('settings.connections.create')).onClick(() => {
-        openCreateSpace(deps);
-      });
+      button
+        .setButtonText(t('settings.connections.create'))
+        .setDisabled(!hasToken)
+        .onClick(() => {
+          if (!hasToken) return;
+          openCreateSpace(deps);
+        });
     });
 }
 
