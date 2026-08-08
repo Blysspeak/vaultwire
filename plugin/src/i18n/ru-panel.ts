@@ -1,6 +1,7 @@
 /** Строки боковой панели: активность, конфликты, корзина, строка состояния. */
 export const RU_PANEL = {
   'panel.title': 'vaultwire',
+  'panel.ribbon': 'vaultwire: синхронизация',
   'panel.tab.activity': 'Активность',
   'panel.tab.conflicts': 'Конфликты',
   'panel.tab.trash': 'Корзина',

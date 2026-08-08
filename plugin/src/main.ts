@@ -5,7 +5,7 @@ import { ConflictRegistries } from './app/registries';
 import { createSettingsActions, openConnectSpace } from './app/settings-actions';
 import type { ActionsDeps } from './app/settings-actions';
 import { startEngine } from './app/start';
-import { mountPanel, mountStatusBar } from './app/surface';
+import { mountPanel, mountRibbon, mountStatusBar } from './app/surface';
 import type { SurfaceDeps } from './app/surface';
 import { buildDiagnostics } from './diagnostics';
 import { RingLog } from './log';
@@ -47,6 +47,7 @@ export default class VaultwirePlugin extends Plugin {
       manager: () => this.manager,
     };
     mountStatusBar(surface);
+    mountRibbon(surface);
     mountPanel(surface);
     this.addSettingTab(new VaultwireSettingTab(this.app, this, createSettingsActions(deps)));
     registerCommands({

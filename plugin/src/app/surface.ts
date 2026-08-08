@@ -1,4 +1,5 @@
 import type { App, Plugin } from 'obsidian';
+import { t } from '../i18n/ru';
 import type { SyncManager } from '../sync';
 import { createPanelHost } from './panel-host';
 import { openPanel } from './panel-open';
@@ -28,6 +29,17 @@ export function mountStatusBar(deps: SurfaceDeps): void {
       bar.render(status);
     }),
   );
+}
+
+/**
+ * Иконка в ленте слева. Панель прячется в правой боковой области и без такой
+ * кнопки находится только через палитру команд, что для ежедневного инструмента
+ * слишком долго. Уборка автоматическая: элемент ленты снимается вместе с плагином.
+ */
+export function mountRibbon(deps: SurfaceDeps): void {
+  deps.plugin.addRibbonIcon('cable', t('panel.ribbon'), () => {
+    void openPanel(deps.app);
+  });
 }
 
 /** Фабрика, а не готовый вид: ссылку на созданный лист плагин не держит. */
