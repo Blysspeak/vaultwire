@@ -25,6 +25,59 @@
 - `rw` — чтение и запись.
 - `ro` — только чтение. Локальные правки не отправляются и не затираются молча: при расхождении локальная версия сохраняется рядом отдельным файлом.
 
+## Разработка
+
+Нужны Node 22 и PostgreSQL 16. Пакеты ставятся по отдельности, `shared` подключён к остальным
+через `file:../shared`, поэтому ставить и собирать его надо первым.
+
+```
+cd shared  && npm install && npm run build
+cd ../server && npm install
+cd ../plugin && npm install
+```
+
+`shared` компилируется в `dist`, а сервер и плагин импортируют именно его. После правки схем
+протокола пересоберите пакет, иначе соседи будут видеть старые типы:
+
+```
+cd shared && npm run build
+```
+
+### Сервер
+
+```
+cd server
+cp .env.example .env      # заполнить DATABASE_URL и BOOTSTRAP_TOKEN
+npm run generate          # клиент Prisma
+npm run migrate           # миграции на локальную базу
+npm run dev               # tsx watch, слушает PORT из .env
+```
+
+Подробности по базе, миграциям и переменным окружения — в `server/README.md`.
+
+### Плагин
+
+```
+cd plugin
+npm run dev               # esbuild в режиме watch
+npm run build             # проверка типов и сборка main.js
+```
+
+Сборка кладёт `main.js` рядом с `manifest.json`. Для проверки в Obsidian скопируйте
+`main.js`, `manifest.json` и `styles.css` в `<хранилище>/.obsidian/plugins/vaultwire/`
+либо сделайте символическую ссылку на каталог `plugin`.
+
+### Проверки
+
+```
+cd shared && npm run typecheck
+cd server && npm run typecheck && npm test
+cd plugin && npm run typecheck && npm test
+```
+
+Тесты сервера и плагина не требуют базы данных: всё, что ходит в PostgreSQL, проверяется
+отдельными сценариями против живой базы.
+
 ## Статус
 
 В разработке. Публичного релиза пока нет.

@@ -13,3 +13,5 @@ coverage/
 .idea/
 data.json
 *.tsbuildinfo
+# каталог шифротел сервера, BLOB_DIR по умолчанию
+data/
