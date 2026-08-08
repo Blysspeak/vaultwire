@@ -1,5 +1,6 @@
 import { Setting } from 'obsidian';
 import { t } from '../../i18n/ru';
+import { addReveal } from '../fields';
 import { serverHost } from './code';
 import { infoRow } from './rows';
 import { folderLabel } from './step-folder';
@@ -13,17 +14,20 @@ export function renderPasswordStep(root: HTMLElement, host: StepHost): void {
   const state = host.state;
   new Setting(root).setName(t('connect.password.heading')).setHeading();
 
-  new Setting(root)
+  const passwordSetting = new Setting(root)
     .setName(t('connect.password.name'))
-    .setDesc(t('connect.password.desc'))
-    .addText((text) => {
-      text.inputEl.type = 'password';
-      text.setValue(state.password);
-      text.onChange((raw) => {
-        state.password = raw;
-        state.error = null;
-      });
+    .setDesc(t('connect.password.desc'));
+  let passwordInput: HTMLInputElement | null = null;
+  passwordSetting.addText((text) => {
+    text.inputEl.type = 'password';
+    text.setValue(state.password);
+    text.onChange((raw) => {
+      state.password = raw;
+      state.error = null;
     });
+    passwordInput = text.inputEl;
+  });
+  addReveal(passwordSetting, () => passwordInput);
 
   new Setting(root)
     .setName(t('connect.password.remember.name'))

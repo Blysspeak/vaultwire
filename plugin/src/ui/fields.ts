@@ -31,13 +31,34 @@ export function secretField(
   desc: MessageKey,
   onChange: (value: string) => void,
 ): void {
-  new Setting(root)
-    .setName(t(name))
-    .setDesc(t(desc))
-    .addText((field) => {
-      field.inputEl.type = 'password';
-      field.onChange(onChange);
+  const setting = new Setting(root).setName(t(name)).setDesc(t(desc));
+  let input: HTMLInputElement | null = null;
+  setting.addText((field) => {
+    field.inputEl.type = 'password';
+    field.onChange(onChange);
+    input = field.inputEl;
+  });
+  addReveal(setting, () => input);
+}
+
+/**
+ * Переключатель показа секрета. Ошибку в пароле иначе замечают только после того,
+ * как пространство создано и стало нечитаемым, а исправить это уже нечем.
+ */
+export function addReveal(setting: Setting, target: () => HTMLInputElement | null): void {
+  setting.addExtraButton((button) => {
+    let shown = false;
+    button.setIcon('eye').setTooltip(t('common.reveal'));
+    button.onClick(() => {
+      const input = target();
+      if (input === null) return;
+      shown = !shown;
+      input.type = shown ? 'text' : 'password';
+      button.setIcon(shown ? 'eye-off' : 'eye');
+      button.setTooltip(t(shown ? 'common.hide' : 'common.reveal'));
+      input.focus();
     });
+  });
 }
 
 /** Выбор папки хранилища; пустое значение — корень. */

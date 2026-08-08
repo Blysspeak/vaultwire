@@ -1,6 +1,7 @@
 import { ButtonComponent, Modal, Notice, Setting } from 'obsidian';
 import type { App } from 'obsidian';
 import { t } from '../i18n/ru';
+import { addReveal } from '../ui/fields';
 import { storePassword } from '../settings/remember';
 import type { ConnectionSettings } from '../settings/types';
 import type { SyncManager } from '../sync';
@@ -48,15 +49,18 @@ export class UnlockModal extends Modal {
     const notice = this.deps.notice;
     if (notice !== undefined) contentEl.createDiv({ cls: 'vw-error', text: notice });
 
-    new Setting(contentEl)
+    const passwordSetting = new Setting(contentEl)
       .setName(t('unlock.password.name'))
-      .setDesc(t('unlock.password.desc'))
-      .addText((field) => {
-        field.inputEl.type = 'password';
-        field.onChange((value) => {
-          this.password = value;
-        });
+      .setDesc(t('unlock.password.desc'));
+    let passwordInput: HTMLInputElement | null = null;
+    passwordSetting.addText((field) => {
+      field.inputEl.type = 'password';
+      field.onChange((value) => {
+        this.password = value;
       });
+      passwordInput = field.inputEl;
+    });
+    addReveal(passwordSetting, () => passwordInput);
 
     new Setting(contentEl)
       .setName(t('unlock.remember.name'))

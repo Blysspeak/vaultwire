@@ -4,6 +4,8 @@ export const RU_CONNECTIONS = {
   'common.save': 'Сохранить',
   'common.confirm': 'Подтвердить',
   'common.unknown': 'неизвестно',
+  'common.reveal': 'Показать',
+  'common.hide': 'Скрыть',
   'common.loading': 'Загрузка…',
 
   /** Состояния подключения (state.*) и единицы объёма (unit.*) лежат в ядре словаря. */

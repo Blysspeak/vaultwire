@@ -6,6 +6,7 @@ import type { ConnectionsDeps, SettingsActions } from './actions';
 import { renderConnectionsSection } from './connections-section';
 import { SETTINGS_BOUNDS } from './defaults';
 import { renderDiagnosticsSection } from './diagnostics-section';
+import { addReveal } from '../ui/fields';
 
 const MB = 1024 * 1024;
 
@@ -97,19 +98,22 @@ export class VaultwireSettingTab extends PluginSettingTab {
 
   private renderServer(root: HTMLElement): void {
     new Setting(root).setName(t('settings.server.heading')).setHeading();
-    new Setting(root)
+    const setting = new Setting(root)
       .setName(t('settings.bootstrapToken.name'))
-      .setDesc(t('settings.bootstrapToken.desc'))
-      .addText((text) => {
-        text.inputEl.type = 'password';
-        text.setValue(this.plugin.settings.bootstrapToken);
-        // Кнопка создания пространства живёт в панели и гаснет без токена:
-        // saveSettings рассылает состояние, и панель гасит её сама.
-        text.onChange(async (raw) => {
-          this.plugin.settings.bootstrapToken = raw.trim();
-          await this.plugin.saveSettings();
-        });
+      .setDesc(t('settings.bootstrapToken.desc'));
+    let input: HTMLInputElement | null = null;
+    setting.addText((text) => {
+      text.inputEl.type = 'password';
+      text.setValue(this.plugin.settings.bootstrapToken);
+      // Кнопка создания пространства живёт в панели и гаснет без токена:
+      // saveSettings рассылает состояние, и панель гасит её сама.
+      text.onChange(async (raw) => {
+        this.plugin.settings.bootstrapToken = raw.trim();
+        await this.plugin.saveSettings();
       });
+      input = text.inputEl;
+    });
+    addReveal(setting, () => input);
   }
 
   private renderDiagnostics(root: HTMLElement): void {
