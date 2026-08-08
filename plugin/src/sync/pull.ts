@@ -119,6 +119,8 @@ async function download(ctx: TransferContext, relPath: string, remote: RemoteCha
     size: body.byteLength,
     syncedAt: ctx.now(),
     dirty: false,
+    lastAuthor: remote.deviceLabel,
+    lastDirection: 'pull',
   };
   return { write, entry };
 }

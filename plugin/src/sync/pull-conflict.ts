@@ -72,6 +72,8 @@ export async function planConflict(
           size: body.byteLength,
           syncedAt: now,
           dirty: false,
+          lastAuthor: op.remote.deviceLabel,
+          lastDirection: 'pull',
         },
     push: resolution.push ? pushOp(op, resolution.writes, path) : null,
     record: {

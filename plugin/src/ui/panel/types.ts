@@ -45,6 +45,8 @@ export interface PanelHost {
   subscribe(listener: (status: SyncStatus) => void): () => void;
   /** Итог последнего прогона: очередь, применённые операции, проблемы. */
   report(spaceId: SpaceId): RunReport | null;
+  /** Автор последней правки файла по пути от корня хранилища; null — неизвестен. */
+  author(spaceId: SpaceId, vaultFilePath: string): string | null;
   /** Повтор одного проблемного документа. */
   retry(spaceId: SpaceId, docId: string): Promise<void>;
   conflicts(spaceId: SpaceId): readonly ConflictRecord[];

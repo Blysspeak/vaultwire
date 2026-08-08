@@ -29,6 +29,13 @@ export const RU_PANEL = {
   'statusbar.none': 'нет подключений',
   'statusbar.pending': 'в очереди {count}',
   'statusbar.awaiting': 'ждёт подтверждения',
+  'badge.pending': 'vaultwire: ждёт отправки',
+  'badge.synced': 'vaultwire: синхронизирован {when}',
+  'badge.author': 'vaultwire: правка от {author}, {when}',
+
+  'statusbar.file.pending': 'ждёт отправки',
+  'statusbar.file.synced': 'синхронизирован {when}',
+  'statusbar.file.author': 'правка от {author}, {when}',
 
   'activity.syncNow': 'Синхронизировать сейчас',
   'activity.pause': 'Пауза',

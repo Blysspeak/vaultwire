@@ -5,6 +5,9 @@ export type { ConnectionState, RunReport, RunTrigger, SyncLimits, Timers, VaultR
 
 export { TEXT_EXTENSIONS, isTextPath, relativePath, vaultPath } from './paths';
 
+export { FILE_SYNC_KINDS, fileSyncStatus } from './file-status';
+export type { FileStatusSource, FileSyncKind, FileSyncStatus } from './file-status';
+
 export { SyncConnection } from './connection';
 export { PendingBuffer } from './pending';
 export type { PendingChanges } from './pending';

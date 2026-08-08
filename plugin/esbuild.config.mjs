@@ -12,6 +12,8 @@ const prod = process.argv[2] === 'production';
  */
 const STYLE_PARTS = [
   'status.css',
+  'note-badge.css',
+  'incoming.css',
   'cards.css',
   'panel.css',
   'head.css',

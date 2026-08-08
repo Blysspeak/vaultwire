@@ -1,5 +1,6 @@
 import { apiVersion, Platform, Plugin } from 'obsidian';
 import { registerCommands } from './app/commands';
+import { mountIncomingHighlight } from './app/highlight';
 import { MassGuard } from './app/mass-guard';
 import { createPanelActions } from './app/panel-actions';
 import { ConflictRegistries } from './app/registries';
@@ -78,6 +79,8 @@ export default class VaultwirePlugin extends Plugin {
 
     // Любой ввод-вывод и подписки на хранилище — только на готовой раскладке:
     // до неё Obsidian досылает create на каждый файл при индексации.
+    const highlight = mountIncomingHighlight(this);
+
     this.app.workspace.onLayoutReady(() => {
       this.manager = startEngine({
         app: this.app,
@@ -90,6 +93,9 @@ export default class VaultwirePlugin extends Plugin {
         },
         registerEvent: (ref) => {
           this.registerEvent(ref);
+        },
+        onReport: (report) => {
+          highlight.mark(report.pulled);
         },
         save: () => this.saveSettings(),
       });

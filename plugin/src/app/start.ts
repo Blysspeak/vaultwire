@@ -2,6 +2,7 @@ import type { App, EventRef } from 'obsidian';
 import type { RingLog } from '../log';
 import type { VaultwireSettings } from '../settings/types';
 import { registerVaultEvents, SyncManager } from '../sync';
+import type { RunReport } from '../sync';
 import type { StatusStore } from '../ui/panel/store';
 import { autoStart } from './auto-start';
 import { createSyncManager } from './engine';
@@ -17,6 +18,8 @@ export interface StartDeps {
   /** plugin.registerInterval и plugin.registerEvent: снятие — дело Obsidian. */
   registerInterval(run: () => void, ms: number): void;
   registerEvent(ref: EventRef): void;
+  /** Итог каждого прогона наружу: подсветка прилетевших изменений. */
+  onReport?(report: RunReport): void;
   /** Запись настроек: сохранённый пароль мог не подойти и быть стёрт. */
   save(): Promise<void>;
 }
@@ -32,6 +35,9 @@ export function startEngine(deps: StartDeps): SyncManager {
     log: deps.log,
     registries: deps.registries,
     registerInterval: deps.registerInterval,
+    onReport: (report: RunReport): void => {
+      deps.onReport?.(report);
+    },
   });
   for (const connection of deps.settings.connections) manager.add(connection);
   registerVaultEvents(deps.app, manager, deps.registerEvent);

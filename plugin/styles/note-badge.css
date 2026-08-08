@@ -1,0 +1,25 @@
+/* Подпись у заголовка заметки. Приглушённая намеренно: это фоновая информация,
+   она не должна спорить с самим заголовком за внимание. */
+.vw-note-badge {
+  margin-inline-start: var(--size-4-2);
+  align-self: center;
+  color: var(--text-faint);
+  font-size: var(--font-ui-smaller);
+  font-weight: var(--font-normal);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* Заголовок вкладки в приоритете: подпись ужимается первой. */
+  flex: 0 1 auto;
+  min-width: 0;
+  transition: color 150ms ease-in-out;
+}
+
+.vw-note-badge:hover {
+  color: var(--text-muted);
+}
+
+/* На узком экране подписи нет: там и заголовок-то помещается с трудом. */
+body.is-phone .vw-note-badge {
+  display: none;
+}

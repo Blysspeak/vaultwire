@@ -48,7 +48,7 @@ async function toChange(item: ChangeItem, keys: KeyBundle): Promise<RemoteChange
     blobHash: item.blobHash,
   };
   if (item.metaCipher === null) {
-    return { ...base, path: null, plainHash: null, mtime: null, ctime: null };
+    return { ...base, path: null, plainHash: null, mtime: null, ctime: null, deviceLabel: null };
   }
   const meta = await decryptMeta(keys.metaKey, item.metaCipher);
   return {
@@ -57,5 +57,6 @@ async function toChange(item: ChangeItem, keys: KeyBundle): Promise<RemoteChange
     plainHash: meta.plainSha256,
     mtime: meta.mtime,
     ctime: meta.ctime,
+    deviceLabel: meta.deviceLabel,
   };
 }

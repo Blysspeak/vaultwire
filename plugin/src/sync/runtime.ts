@@ -30,6 +30,8 @@ export interface RuntimeDeps {
   /** Автослияние markdown и запись конфликта в реестр панели. */
   readonly merge?: RunnerDeps['merge'];
   readonly onConflict?: RunnerDeps['onConflict'];
+  /** Итог прогона наружу: подсветка прилетевших изменений в проводнике. */
+  readonly onReport?: RunnerDeps['onReport'];
 }
 
 /** Подключение со всей обвязкой: прогон, наблюдатель, живой канал. */
@@ -62,6 +64,7 @@ export function createRuntime(settings: ConnectionSettings, deps: RuntimeDeps): 
     log: deps.log,
     ...(deps.merge === undefined ? {} : { merge: deps.merge }),
     ...(deps.onConflict === undefined ? {} : { onConflict: deps.onConflict }),
+    ...(deps.onReport === undefined ? {} : { onReport: deps.onReport }),
   });
   const watcher = new SyncWatcher({
     connection,

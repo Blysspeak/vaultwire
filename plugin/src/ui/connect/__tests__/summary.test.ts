@@ -24,6 +24,7 @@ function remote(path: string, size: number): RemoteChange {
     ctime: 500,
     size,
     blobHash: null,
+    deviceLabel: 'устройство',
   };
 }
 

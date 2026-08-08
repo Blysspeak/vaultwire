@@ -21,6 +21,9 @@ describe('прогон целиком', () => {
     expect(h.gateway.files.get(VAULT_PATH)).toBe('привет');
     expect(h.connection.index.get(PATH)?.rev).toBe(1);
     expect(h.connection.lastSeq).toBe(5);
+    // Автор и направление живут в индексе, а не в самой заметке.
+    expect(h.connection.index.get(PATH)?.lastAuthor).toBe('сервер');
+    expect(h.connection.index.get(PATH)?.lastDirection).toBe('pull');
   });
 
   it('новый локальный файл уходит на сервер и попадает в индекс', async () => {
@@ -33,6 +36,8 @@ describe('прогон целиком', () => {
 
     expect(report.pushed).toEqual([PATH]);
     expect(h.connection.index.get(PATH)?.rev).toBe(1);
+    expect(h.connection.index.get(PATH)?.lastAuthor).toBe('ноутбук');
+    expect(h.connection.index.get(PATH)?.lastDirection).toBe('push');
     expect(h.calls.some((call) => call.startsWith('PUT '))).toBe(true);
   });
 
@@ -50,6 +55,8 @@ describe('прогон целиком', () => {
       size: 5,
       syncedAt: 1000,
       dirty: false,
+      lastAuthor: null,
+      lastDirection: null,
     });
     h.reader.put(VAULT_PATH, 'моя правка', 2000);
     const remote = await remoteDoc(keys, 'чужая правка', 2, 9);
@@ -81,6 +88,8 @@ describe('прогон целиком', () => {
         size: 5,
         syncedAt: 1000,
         dirty: false,
+        lastAuthor: null,
+        lastDirection: null,
       });
     }
 

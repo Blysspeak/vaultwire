@@ -1,7 +1,9 @@
 import { setIcon, type IconName } from 'obsidian';
 import { t } from '../../i18n/ru';
+import type { FileSyncStatus } from '../../sync/file-status';
 import type { SyncStatus } from '../../sync/status';
 import type { ConnectionState } from '../../sync/types';
+import { formatRelativeTime } from '../relative-time';
 import { joinMeta } from './render';
 
 /** Иконка на состояние подключения. Только имена из набора Obsidian. */
@@ -30,20 +32,48 @@ export class VaultwireStatusBar {
     this.label = el.createSpan({ cls: 'vw-status-text' });
   }
 
-  render(status: SyncStatus): void {
+  /**
+   * Активный файл вытесняет общее состояние: человеку важнее судьба открытой
+   * заметки, а общее состояние остаётся в панели. null — файл вне подключений.
+   */
+  render(status: SyncStatus, file: FileSyncStatus | null = null, now: number = Date.now()): void {
     if (status.connections.length === 0) {
-      setIcon(this.icon, STATE_ICONS.idle);
-      this.label.setText(t('statusbar.none'));
-      this.el.setAttr('aria-label', t('statusbar.none'));
+      this.show(STATE_ICONS.idle, t('statusbar.none'));
       return;
     }
-    setIcon(this.icon, STATE_ICONS[status.state]);
-    const text = joinMeta([
-      t(`state.${status.state}`),
-      status.pending === 0 ? null : t('statusbar.pending', { count: status.pending }),
-      status.connections.some((item) => item.awaitingConfirmation) ? t('statusbar.awaiting') : null,
-    ]);
+    if (file !== null) {
+      this.show(fileIcon(file), fileText(file, now));
+      return;
+    }
+    this.show(
+      STATE_ICONS[status.state],
+      joinMeta([
+        t(`state.${status.state}`),
+        status.pending === 0 ? null : t('statusbar.pending', { count: status.pending }),
+        status.connections.some((item) => item.awaitingConfirmation)
+          ? t('statusbar.awaiting')
+          : null,
+      ]),
+    );
+  }
+
+  private show(icon: IconName, text: string): void {
+    setIcon(this.icon, icon);
     this.label.setText(text);
     this.el.setAttr('aria-label', text);
   }
+}
+
+function fileIcon(file: FileSyncStatus): IconName {
+  if (file.kind === 'pending') return 'refresh-cw';
+  return file.kind === 'received' ? 'download' : 'check';
+}
+
+function fileText(file: FileSyncStatus, now: number): string {
+  if (file.kind === 'pending') return t('statusbar.file.pending');
+  const when = file.at === null ? t('time.now') : formatRelativeTime(file.at, now);
+  if (file.kind === 'received' && file.author !== null) {
+    return t('statusbar.file.author', { author: file.author, when });
+  }
+  return t('statusbar.file.synced', { when });
 }

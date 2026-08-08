@@ -134,5 +134,7 @@ function commit(
     size: upload.size,
     syncedAt: ctx.now(),
     dirty: false,
+    lastAuthor: ctx.deviceLabel,
+    lastDirection: 'push',
   });
 }

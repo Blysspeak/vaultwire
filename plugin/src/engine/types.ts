@@ -1,5 +1,9 @@
 import type { BlobHash, DocId, Rev, Seq } from '@vaultwire/shared';
 
+/** Куда уехала последняя правка файла: push — наша отправка, pull — приём с сервера. */
+export const SYNC_DIRECTIONS = ['push', 'pull'] as const;
+export type SyncDirection = (typeof SYNC_DIRECTIONS)[number];
+
 /** Запись индекса подключения из раздела 6. Опорная точка сравнения — plainHash. */
 export interface IndexEntry {
   /** Путь от корня подключения, нормализованный так же, как для docId. */
@@ -14,6 +18,12 @@ export interface IndexEntry {
   readonly syncedAt: number;
   /** Изменение замечено, но ещё не отправлено: копится в офлайне. */
   readonly dirty: boolean;
+  /**
+   * Метка устройства, чья правка легла последней. У записей, сделанных до
+   * появления поля, значение null: индекс читается снисходительно.
+   */
+  readonly lastAuthor: string | null;
+  readonly lastDirection: SyncDirection | null;
 }
 
 /** Состояние файла на диске на момент скана. Содержимое не читается. */
@@ -59,6 +69,8 @@ export interface RemoteChange {
   readonly ctime: number | null;
   readonly size: number;
   readonly blobHash: BlobHash | null;
+  /** Метка устройства-автора из metaCipher; у надгробия метаданных нет. */
+  readonly deviceLabel: string | null;
 }
 
 /** Замеченное локальное переименование, приходит из события vault.on('rename'). */

@@ -1,0 +1,12 @@
+/* Подсветка прилетевших изменений в файловом проводнике. Только свои классы. */
+
+.vw-incoming {
+  background-color: rgba(var(--color-accent-rgb), 0.12);
+  border-radius: var(--radius-s);
+  transition: background-color 1.2s ease-out;
+}
+
+/* Затухание: снятие основного класса оборвало бы переход мгновенно. */
+.vw-incoming.vw-incoming-out {
+  background-color: transparent;
+}

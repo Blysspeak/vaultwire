@@ -1,5 +1,6 @@
-import type { SpaceId } from '@vaultwire/shared';
-import type { IndexEntry } from './types';
+import type { DocId, SpaceId } from '@vaultwire/shared';
+import { SYNC_DIRECTIONS } from './types';
+import type { IndexEntry, SyncDirection } from './types';
 
 /** Формат файла индекса; версия меняется при несовместимой правке структуры. */
 export const STATE_VERSION = 1;
@@ -48,7 +49,8 @@ export function parseState(json: string, spaceId: SpaceId): StateFile {
   if (value['version'] !== STATE_VERSION || value['spaceId'] !== spaceId) return empty;
   const lastSeq = typeof value['lastSeq'] === 'number' ? value['lastSeq'] : 0;
   const list = Array.isArray(value['entries']) ? value['entries'] : [];
-  return { version: STATE_VERSION, spaceId, lastSeq, entries: list.filter(isIndexEntry) };
+  const entries = list.map(readEntry).filter((entry): entry is IndexEntry => entry !== null);
+  return { version: STATE_VERSION, spaceId, lastSeq, entries };
 }
 
 export async function readState(
@@ -81,17 +83,42 @@ export async function writeStateAtomic(
   await adapter.rename(temp, path);
 }
 
-function isIndexEntry(value: unknown): value is IndexEntry {
-  if (typeof value !== 'object' || value === null) return false;
-  const entry = value as Record<string, unknown>;
-  return (
-    typeof entry['path'] === 'string' &&
-    typeof entry['docId'] === 'string' &&
-    typeof entry['rev'] === 'number' &&
-    typeof entry['plainHash'] === 'string' &&
-    typeof entry['mtime'] === 'number' &&
-    typeof entry['size'] === 'number' &&
-    typeof entry['syncedAt'] === 'number' &&
-    typeof entry['dirty'] === 'boolean'
-  );
+/**
+ * Запись индекса из файла. Автор и направление появились позже обязательных
+ * полей, поэтому их отсутствие не повод выкидывать запись: подставляется null.
+ */
+function readEntry(value: unknown): IndexEntry | null {
+  if (typeof value !== 'object' || value === null) return null;
+  const raw = value as Record<string, unknown>;
+  const { path, docId, rev, plainHash, mtime, size, syncedAt, dirty } = raw;
+  if (
+    typeof path !== 'string' ||
+    typeof docId !== 'string' ||
+    typeof rev !== 'number' ||
+    typeof plainHash !== 'string' ||
+    typeof mtime !== 'number' ||
+    typeof size !== 'number' ||
+    typeof syncedAt !== 'number' ||
+    typeof dirty !== 'boolean'
+  ) {
+    return null;
+  }
+  const author = raw['lastAuthor'];
+  const direction = raw['lastDirection'];
+  return {
+    path,
+    docId: docId as DocId,
+    rev,
+    plainHash,
+    mtime,
+    size,
+    syncedAt,
+    dirty,
+    lastAuthor: typeof author === 'string' ? author : null,
+    lastDirection: isDirection(direction) ? direction : null,
+  };
+}
+
+function isDirection(value: unknown): value is SyncDirection {
+  return typeof value === 'string' && (SYNC_DIRECTIONS as readonly string[]).includes(value);
 }

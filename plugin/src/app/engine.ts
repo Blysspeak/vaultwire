@@ -4,7 +4,7 @@ import { ObsidianVaultGateway } from '../engine/vault-gateway';
 import type { RingLog } from '../log';
 import type { VaultwireSettings } from '../settings/types';
 import { ObsidianVaultReader, SyncManager } from '../sync';
-import type { SyncLimits } from '../sync';
+import type { RunReport, SyncLimits } from '../sync';
 import { createConflictGlue } from './conflict-glue';
 import type { ConflictRegistries } from './registries';
 
@@ -15,6 +15,8 @@ export interface EngineDeps {
   readonly registries: ConflictRegistries;
   /** plugin.registerInterval поверх window.setInterval: таймеры снимает Obsidian. */
   readonly registerInterval: (run: () => void, ms: number) => void;
+  /** Итог каждого прогона наружу: на нём держится подсветка в проводнике. */
+  readonly onReport?: (report: RunReport) => void;
 }
 
 /**
@@ -41,6 +43,7 @@ export function createSyncManager(deps: EngineDeps): SyncManager {
     log: deps.log,
     merge: glue.merge,
     onConflict: glue.onConflict,
+    ...(deps.onReport === undefined ? {} : { onReport: deps.onReport }),
   });
   return manager;
 }

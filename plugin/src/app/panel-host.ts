@@ -6,7 +6,7 @@ import { GatewayRestoreVault, readBinaryFromVault } from '../history/vault-resto
 import { listTrash, restoreFromTrash } from '../history/trash';
 import type { TrashItem } from '../history/trash';
 import type { SyncManager } from '../sync';
-import { vaultPath } from '../sync/paths';
+import { relativePath, vaultPath } from '../sync/paths';
 import type { StatusStore } from '../ui/panel/store';
 import type { PanelActions, PanelHost } from '../ui/panel/types';
 import { historyDepsOf } from './history-deps';
@@ -42,6 +42,7 @@ export function createPanelHost(deps: PanelHostDeps): PanelHost {
     status: () => deps.store.status,
     subscribe: (listener) => deps.store.subscribe(listener),
     report: (spaceId) => deps.manager()?.connection(spaceId)?.lastReport ?? null,
+    author: (spaceId, path) => authorOf(deps, spaceId, path),
     // Точечного повтора одного документа в очереди нет: повторяем весь прогон.
     retry: (spaceId) =>
       run(async (manager) => {
@@ -57,6 +58,14 @@ export function createPanelHost(deps: PanelHostDeps): PanelHost {
     trash: (spaceId) => loadTrash(deps, spaceId),
     restore: (spaceId, item) => restore(deps, spaceId, item, restoreVault),
   };
+}
+
+/** Автор берётся из индекса: в самих заметках никаких пометок не заводится. */
+function authorOf(deps: PanelHostDeps, spaceId: SpaceId, path: string): string | null {
+  const connection = deps.manager()?.connection(spaceId);
+  if (connection === undefined) return null;
+  const relPath = relativePath(connection.folder, path);
+  return relPath === null ? null : (connection.index.get(relPath)?.lastAuthor ?? null);
 }
 
 async function resolveConflictRecord(

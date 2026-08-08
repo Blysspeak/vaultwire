@@ -17,6 +17,8 @@ export interface RunnerDeps {
   /** Автослияние markdown; не задано — стратегия merge уходит в конфликтную копию. */
   readonly merge?: PassDeps['merge'];
   readonly onConflict?: PassDeps['onConflict'];
+  /** Итог прогона наружу: на нём держится подсветка прилетевших изменений. */
+  readonly onReport?: (report: RunReport) => void;
 }
 
 /**
@@ -70,6 +72,7 @@ export class SyncRunner {
       const report = await runPass(this.pass(), at);
       connection.setState(connection.writable ? 'idle' : 'readonly');
       connection.finishRun(report);
+      this.deps.onReport?.(report);
       return report;
     } catch (error) {
       const state = connection.fail(error);

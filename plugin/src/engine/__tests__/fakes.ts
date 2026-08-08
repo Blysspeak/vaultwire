@@ -16,6 +16,8 @@ export function entry(path: string, overrides: Partial<IndexEntry> = {}): IndexE
     size: 10,
     syncedAt: 1000,
     dirty: false,
+    lastAuthor: null,
+    lastDirection: null,
     ...overrides,
   };
 }
@@ -36,6 +38,7 @@ export function remoteChange(path: string, overrides: Partial<RemoteChange> = {}
     ctime: 500,
     size: 30,
     blobHash: 'a'.repeat(64) as BlobHash,
+    deviceLabel: 'устройство',
     ...overrides,
   };
 }

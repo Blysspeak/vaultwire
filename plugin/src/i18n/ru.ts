@@ -61,6 +61,16 @@ const RU_CORE = {
   'log.level.warn': 'предупреждения',
   'log.level.error': 'только ошибки',
 
+  /** Относительное время: формы русского счётного числительного. */
+  'time.now': 'только что',
+  'time.minutes.one': '{count} минуту назад',
+  'time.minutes.few': '{count} минуты назад',
+  'time.minutes.many': '{count} минут назад',
+  'time.hours.one': '{count} час назад',
+  'time.hours.few': '{count} часа назад',
+  'time.hours.many': '{count} часов назад',
+  'time.yesterday': 'вчера',
+
   'unit.b': '{count} Б',
   'unit.kb': '{count} КБ',
   'unit.mb': '{count} МБ',

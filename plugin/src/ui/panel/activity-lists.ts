@@ -1,5 +1,6 @@
 import { t } from '../../i18n/ru';
 import type { ConnectionStatus, SyncStatus } from '../../sync/status';
+import { formatRelativeTime } from '../relative-time';
 import { actionButton, joinMeta, list, listItem, note, section } from './render';
 import type { PanelHost } from './types';
 
@@ -14,6 +15,8 @@ interface RecentOp {
   readonly kind: OpKind;
   readonly space: string;
   readonly at: number;
+  /** Метка устройства последней правки; null — старая запись индекса. */
+  readonly author: string | null;
 }
 
 export interface ActivityLists {
@@ -57,7 +60,9 @@ function collectRecent(host: PanelHost, connections: readonly ConnectionStatus[]
     if (report === null) continue;
     const space = many ? connection.label : '';
     const add = (paths: readonly string[], kind: OpKind): void => {
-      for (const path of paths) items.push({ path, kind, space, at: report.at });
+      for (const path of paths) {
+        items.push({ path, kind, space, at: report.at, author: host.author(connection.spaceId, path) });
+      }
     };
     add(report.pulled, 'pulled');
     add(report.pushed, 'pushed');
@@ -70,9 +75,12 @@ function collectRecent(host: PanelHost, connections: readonly ConnectionStatus[]
 function fillRecent(target: HTMLElement, empty: HTMLElement, items: readonly RecentOp[]): void {
   target.empty();
   empty.toggle(items.length === 0);
+  const now = Date.now();
   for (const item of items) {
     const parts = listItem(target, item.path);
-    parts.meta.setText(joinMeta([t(`op.${item.kind}`), item.space]));
+    parts.meta.setText(
+      joinMeta([t(`op.${item.kind}`), item.author, formatRelativeTime(item.at, now), item.space]),
+    );
     parts.actions.remove();
   }
 }
