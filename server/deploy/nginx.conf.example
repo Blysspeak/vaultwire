@@ -35,9 +35,10 @@ server {
 }
 
 server {
-    listen 443 ssl;
-    listen [::]:443 ssl;
-    http2 on;
+    # Синтаксис для nginx 1.24 и старше. На 1.25+ это даёт предупреждение об
+    # устаревании, там правильнее отдельная директива http2 on.
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
     server_name obsidian.boostix.space;
 
     ssl_certificate /etc/letsencrypt/live/obsidian.boostix.space/fullchain.pem;
