@@ -1,0 +1,27 @@
+{
+  "name": "vaultwire",
+  "version": "0.1.0",
+  "description": "Плагин Obsidian: двусторонняя синхронизация хранилища со сквозным шифрованием",
+  "main": "main.js",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "tsc --noEmit --skipLibCheck && node esbuild.config.mjs production",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@vaultwire/shared": "file:../shared"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "builtin-modules": "^4.0.0",
+    "esbuild": "^0.25.0",
+    "obsidian": "latest",
+    "tslib": "^2.8.1",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}
