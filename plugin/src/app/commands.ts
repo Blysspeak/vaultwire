@@ -3,10 +3,11 @@ import type { App, Plugin } from 'obsidian';
 import { t } from '../i18n/ru';
 import type { VaultwireSettings } from '../settings/types';
 import type { SyncManager } from '../sync';
+import { lockedConnections } from './auto-start';
 import { clearConflictCopies } from './clear-copies';
 import { openPanel } from './panel-open';
 import type { ConflictRegistries } from './registries';
-import { lockedConnections, unlockChain } from './unlock';
+import { pendingUnlocks, unlockChain } from './unlock-chain';
 
 export interface CommandDeps {
   readonly app: App;
@@ -17,6 +18,8 @@ export interface CommandDeps {
   manager(): SyncManager | null;
   connect(): void;
   refresh(): void;
+  /** Запись настроек: окно разблокировки может сохранить введённый пароль. */
+  save(): Promise<void>;
 }
 
 /** Команды раздела 8. Горячие клавиши по умолчанию не назначаются. */
@@ -73,7 +76,10 @@ function unlock(deps: CommandDeps): void {
     new Notice(t('notice.allUnlocked'));
     return;
   }
-  unlockChain(deps.app, manager, locked, deps.refresh);
+  unlockChain(
+    { app: deps.app, manager, save: () => deps.save(), onDone: deps.refresh },
+    pendingUnlocks(locked),
+  );
 }
 
 /** Подключений нет или движок ещё не поднят — команде делать нечего. */

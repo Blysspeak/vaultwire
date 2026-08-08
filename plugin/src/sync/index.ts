@@ -6,7 +6,9 @@ export type { ConnectionState, RunReport, RunTrigger, SyncLimits, Timers, VaultR
 export { TEXT_EXTENSIONS, isTextPath, relativePath, vaultPath } from './paths';
 
 export { SyncConnection } from './connection';
-export type { PendingChanges } from './connection';
+export { PendingBuffer } from './pending';
+export type { PendingChanges } from './pending';
+export { DocIdCache } from './doc-ids';
 
 export { fetchChanges } from './remote';
 export type { RemoteChanges } from './remote';

@@ -76,6 +76,9 @@ export function createDefaultConnection(identity: ConnectionIdentity): Connectio
     // Автослияние по разделу 12 в первой версии выключено по умолчанию.
     conflictStrategy: 'copy',
     autoSync: true,
+    // Окно пароля на каждом запуске слишком дорого по UX, особенно на телефоне.
+    rememberPassword: true,
+    password: null,
     lastSeq: 0,
     lastSyncedAt: null,
   };

@@ -2,32 +2,28 @@ import type { DocId, Role, SpaceId } from '@vaultwire/shared';
 import { canWrite } from '@vaultwire/shared';
 // Модули api берутся поимённо: сборный индекс тянет за собой requestUrl из obsidian.
 import type { VaultwireClient } from '../api/client';
-import { NetworkError, UnauthorizedError } from '../api/errors';
-import { computeDocId } from '../crypto';
 import type { KeyBundle } from '../crypto';
 import { EchoGuard } from '../engine/echo';
 import type { ConnectionIndex } from '../engine/state';
 import type { RenameHint } from '../engine/types';
 import type { ConnectionSettings } from '../settings/types';
+import { DocIdCache } from './doc-ids';
+import { reasonForError, stateForError } from './failure';
+import { PendingBuffer } from './pending';
+import type { PendingChanges } from './pending';
 import type { ConnectionState, RunReport } from './types';
 
-/** Накопленные наблюдателем локальные изменения, забираются прогоном целиком. */
-export interface PendingChanges {
-  readonly paths: readonly string[];
-  readonly renames: readonly RenameHint[];
-}
-
 /**
- * Одно подключение: одно пространство и одна локальная папка. Держит ключи в
- * памяти (на диск они не попадают никогда), состояние, курсор lastSeq и индекс.
+ * Одно подключение: одно пространство и одна локальная папка. Держит выведенные
+ * ключи в памяти, состояние, курсор lastSeq и индекс. Сами ключи на диск не
+ * пишутся: при включённой опции сохраняется только пароль, и они выводятся заново.
  */
 export class SyncConnection {
   /** Подавление эха общее на подключение: наблюдатель и применение смотрят в один набор. */
   readonly echo = new EchoGuard();
 
-  private readonly docIds = new Map<string, DocId>();
-  private readonly pendingPaths = new Set<string>();
-  private readonly pendingRenames: RenameHint[] = [];
+  private readonly docIds = new DocIdCache();
+  private readonly pending = new PendingBuffer();
   private keyBundle: KeyBundle | null = null;
   private currentState: ConnectionState = 'idle';
   private currentReason: string | null = null;
@@ -107,36 +103,27 @@ export class SyncConnection {
     this.settings.lastSeq = seq;
   }
 
-  /**
-   * Разбор ошибки прогона по таблице раздела 3: 401 — отозванный доступ,
-   * обрыв транспорта — офлайн, всё прочее — ошибка с баннером.
-   */
   fail(error: unknown): ConnectionState {
-    const state: ConnectionState =
-      error instanceof UnauthorizedError ? 'revoked' : error instanceof NetworkError ? 'offline' : 'error';
-    this.setState(state, error instanceof Error ? error.message : String(error));
+    const state = stateForError(error);
+    this.setState(state, reasonForError(error));
     return state;
   }
 
   markDirty(relPath: string): void {
-    this.pendingPaths.add(relPath);
+    this.pending.markDirty(relPath);
   }
 
   markRename(hint: RenameHint): void {
-    this.pendingRenames.push(hint);
+    this.pending.markRename(hint);
   }
 
   get pendingCount(): number {
-    return this.pendingPaths.size + this.pendingRenames.length;
+    return this.pending.size;
   }
 
   /** Забрать накопленное; повторный вызов уже ничего не отдаёт. */
   drain(): PendingChanges {
-    const paths = [...this.pendingPaths];
-    const renames = [...this.pendingRenames];
-    this.pendingPaths.clear();
-    this.pendingRenames.length = 0;
-    return { paths, renames };
+    return this.pending.drain();
   }
 
   /** Подтверждение массового удаления действует ровно на один прогон. */
@@ -155,16 +142,9 @@ export class SyncConnection {
     this.settings.lastSyncedAt = report.at;
   }
 
-  /** docId детерминирован, поэтому считается один раз на путь за жизнь подключения. */
   async resolveDocIds(paths: readonly string[]): Promise<ReadonlyMap<string, DocId>> {
     const keys = this.keyBundle;
     if (keys === null) throw new Error('vaultwire: подключение без ключей');
-    const missing = [...new Set(paths)].filter((path) => !this.docIds.has(path));
-    const computed = await Promise.all(missing.map((path) => computeDocId(keys.pathKey, path)));
-    missing.forEach((path, i) => {
-      const docId = computed[i];
-      if (docId !== undefined) this.docIds.set(path, docId);
-    });
-    return this.docIds;
+    return this.docIds.resolve(keys, paths);
   }
 }

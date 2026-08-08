@@ -1,4 +1,5 @@
 import { Notice } from 'obsidian';
+import { UnlockModal } from '../app/unlock';
 import { t } from '../i18n/ru';
 import { ConfirmModal } from '../ui/confirm';
 import { requireManager } from './actions';
@@ -36,10 +37,37 @@ export function configureConnection(deps: ConnectionsDeps, connection: Connectio
   new ConnectionSettingsModal(deps.app, {
     connection,
     save: () => deps.save(),
+    requestPassword: (done) => {
+      askPassword(deps, connection, done);
+    },
     onSaved: () => {
       new Notice(t('notice.connectionSaved'));
       deps.refresh();
     },
+  }).open();
+}
+
+/**
+ * Запомнить пароль включают только вместе с самим паролем, а непроверенный
+ * пароль хранить бессмысленно: окно разблокировки сверяет его верификатором
+ * и сохраняет уже проверенным.
+ */
+function askPassword(deps: ConnectionsDeps, connection: ConnectionSettings, done: () => void): void {
+  const manager = requireManager(deps);
+  if (manager === null) {
+    done();
+    return;
+  }
+  new UnlockModal({
+    app: deps.app,
+    manager,
+    connection,
+    remember: true,
+    save: () => deps.save(),
+    onDone: () => {
+      deps.refresh();
+    },
+    onClosed: done,
   }).open();
 }
 

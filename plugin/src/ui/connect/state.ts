@@ -17,6 +17,8 @@ export interface WizardState {
   folderIssue: FolderIssue | null;
   label: string;
   password: string;
+  /** Сохранить пароль в настройках плагина; по умолчанию включено. */
+  rememberPassword: boolean;
   /** Идёт активация инвайта или проверка пароля: кнопки заблокированы. */
   busy: boolean;
   /** Текст последней ошибки, уже взятый из словаря. */
@@ -41,6 +43,7 @@ export function initialState(): WizardState {
     folderIssue: null,
     label: '',
     password: '',
+    rememberPassword: true,
     busy: false,
     error: null,
   };

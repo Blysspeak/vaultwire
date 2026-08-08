@@ -1,6 +1,7 @@
 import { ButtonComponent, Modal, Notice, Setting } from 'obsidian';
 import type { App } from 'obsidian';
 import { t } from '../i18n/ru';
+import { storePassword } from '../settings/remember';
 import type { ConnectionSettings } from '../settings/types';
 import type { SyncManager } from '../sync';
 import { failureKey } from '../ui/owner/create-space-validate';
@@ -9,22 +10,31 @@ export interface UnlockDeps {
   readonly app: App;
   readonly manager: SyncManager;
   readonly connection: ConnectionSettings;
+  /** Готовое объяснение сверху: например, сохранённый пароль перестал подходить. */
+  readonly notice?: string;
+  /** Начальное состояние переключателя; по умолчанию — как записано у подключения. */
+  readonly remember?: boolean;
+  save(): Promise<void>;
   /** Успешный старт; отмена окна сюда не приходит. */
   onDone(): void;
+  /** Закрытие окна любым путём: вызвавшему может понадобиться перерисовка. */
+  onClosed?(): void;
 }
 
 /**
- * Пароль шифрования на диск не попадает никогда, поэтому после каждого запуска
- * Obsidian подключение стоит без ключей и ждёт ввода. Окно спрашивает его один
- * раз на подключение и сразу запускает первый прогон.
+ * Ввод пароля шифрования для одного подключения с последующим первым прогоном.
+ * Открывается только там, где сохранённого пароля нет: с ним подключение
+ * поднимается само, без единого окна.
  */
 export class UnlockModal extends Modal {
   private password = '';
+  private remember: boolean;
   private submit: ButtonComponent | null = null;
   private statusEl: HTMLElement | null = null;
 
   constructor(private readonly deps: UnlockDeps) {
     super(deps.app);
+    this.remember = deps.remember ?? deps.connection.rememberPassword;
   }
 
   override onOpen(): void {
@@ -35,6 +45,8 @@ export class UnlockModal extends Modal {
       cls: 'vw-note',
       text: `${t('unlock.space')}: ${this.deps.connection.label}`,
     });
+    const notice = this.deps.notice;
+    if (notice !== undefined) contentEl.createDiv({ cls: 'vw-error', text: notice });
 
     new Setting(contentEl)
       .setName(t('unlock.password.name'))
@@ -43,6 +55,16 @@ export class UnlockModal extends Modal {
         field.inputEl.type = 'password';
         field.onChange((value) => {
           this.password = value;
+        });
+      });
+
+    new Setting(contentEl)
+      .setName(t('unlock.remember.name'))
+      .setDesc(t('unlock.remember.desc'))
+      .addToggle((toggle) => {
+        toggle.setValue(this.remember);
+        toggle.onChange((value) => {
+          this.remember = value;
         });
       });
 
@@ -63,6 +85,7 @@ export class UnlockModal extends Modal {
 
   override onClose(): void {
     this.contentEl.empty();
+    this.deps.onClosed?.();
   }
 
   private async run(): Promise<void> {
@@ -80,42 +103,11 @@ export class UnlockModal extends Modal {
     }
     // Автосинхронизация выключена — ключи выведены, но канал и опрос стоят.
     if (!this.deps.connection.autoSync) this.deps.manager.pause(this.deps.connection.spaceId);
+    // Пароль проверен верификатором: только теперь его есть смысл запоминать.
+    storePassword(this.deps.connection, this.password, this.remember);
+    await this.deps.save();
     this.close();
     new Notice(t('notice.unlocked', { label: this.deps.connection.label }));
     this.deps.onDone();
   }
-}
-
-/** Подключения без ключей: пароль не введён, прогон невозможен. */
-export function lockedConnections(
-  manager: SyncManager,
-  connections: readonly ConnectionSettings[],
-): ConnectionSettings[] {
-  return connections.filter((item) => {
-    const connection = manager.connection(item.spaceId);
-    return connection === undefined || connection.keys === null;
-  });
-}
-
-/**
- * Цепочка разблокировки: окна идут по одному. Отмена обрывает цепочку целиком —
- * навязывать ввод пароля на старте нельзя, работа в хранилище не блокируется.
- */
-export function unlockChain(
-  app: App,
-  manager: SyncManager,
-  queue: readonly ConnectionSettings[],
-  onDone: () => void,
-): void {
-  const [first, ...rest] = queue;
-  if (first === undefined) return;
-  new UnlockModal({
-    app,
-    manager,
-    connection: first,
-    onDone: () => {
-      onDone();
-      unlockChain(app, manager, rest, onDone);
-    },
-  }).open();
 }

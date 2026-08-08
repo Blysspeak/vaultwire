@@ -30,6 +30,9 @@ export const RU_CONNECTIONS = {
   'connSettings.strategy.desc': 'Что делать, когда файл изменён и локально, и на сервере.',
   'connSettings.autoSync.name': 'Автосинхронизация',
   'connSettings.autoSync.desc': 'Выключено — синхронизация только по команде.',
+  'connSettings.remember.name': 'Запомнить пароль',
+  'connSettings.remember.desc':
+    'Пароль хранится в открытом виде в файле настроек плагина. Выключение стирает его сразу, включение просит ввести заново.',
 
   'strategy.copy': 'конфликтная копия',
   'strategy.merge': 'слияние markdown',

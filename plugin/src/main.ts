@@ -1,12 +1,12 @@
 import { apiVersion, Platform, Plugin } from 'obsidian';
 import { registerCommands } from './app/commands';
 import { MassGuard } from './app/mass-guard';
-import { createPanelHost } from './app/panel-host';
-import { openPanel } from './app/panel-open';
 import { ConflictRegistries } from './app/registries';
 import { createSettingsActions, openConnectSpace } from './app/settings-actions';
 import type { ActionsDeps } from './app/settings-actions';
 import { startEngine } from './app/start';
+import { mountPanel, mountStatusBar } from './app/surface';
+import type { SurfaceDeps } from './app/surface';
 import { buildDiagnostics } from './diagnostics';
 import { RingLog } from './log';
 import { createDefaultSettings } from './settings/defaults';
@@ -14,9 +14,6 @@ import { VaultwireSettingTab } from './settings/tab';
 import type { VaultwireSettings } from './settings/types';
 import { aggregateStatus, SyncManager } from './sync';
 import { StatusStore } from './ui/panel/store';
-import { VaultwireStatusBar } from './ui/panel/status-bar';
-import { VW_PANEL_VIEW_TYPE } from './ui/panel/types';
-import { VaultwirePanelView } from './ui/panel/view';
 
 /** Период перерисовки строки состояния, мс. */
 const STATUS_REFRESH_MS = 5_000;
@@ -42,8 +39,15 @@ export default class VaultwirePlugin extends Plugin {
     this.store = store;
     const deps = this.actionsDeps(store, registries);
 
-    this.setupStatusBar(store);
-    this.setupPanel(store, registries);
+    const surface: SurfaceDeps = {
+      app: this.app,
+      plugin: this,
+      store,
+      registries,
+      manager: () => this.manager,
+    };
+    mountStatusBar(surface);
+    mountPanel(surface);
     this.addSettingTab(new VaultwireSettingTab(this.app, this, createSettingsActions(deps)));
     registerCommands({
       app: this.app,
@@ -55,6 +59,7 @@ export default class VaultwirePlugin extends Plugin {
         openConnectSpace(deps);
       },
       refresh: deps.refresh,
+      save: () => this.saveSettings(),
     });
 
     // Тот же тик спрашивает подтверждение массового удаления: прогон, который
@@ -82,6 +87,7 @@ export default class VaultwirePlugin extends Plugin {
         registerEvent: (ref) => {
           this.registerEvent(ref);
         },
+        save: () => this.saveSettings(),
       });
     });
   }
@@ -120,30 +126,6 @@ export default class VaultwirePlugin extends Plugin {
         store.publish();
       },
     };
-  }
-
-  private setupStatusBar(store: StatusStore): void {
-    const el = this.addStatusBarItem();
-    const bar = new VaultwireStatusBar(el);
-    this.registerDomEvent(el, 'click', () => {
-      void openPanel(this.app);
-    });
-    this.register(
-      store.subscribe((status) => {
-        bar.render(status);
-      }),
-    );
-  }
-
-  /** Фабрика, а не готовый вид: ссылку на созданный лист плагин не держит. */
-  private setupPanel(store: StatusStore, registries: ConflictRegistries): void {
-    const host = createPanelHost({
-      app: this.app,
-      manager: () => this.manager,
-      store,
-      registries,
-    });
-    this.registerView(VW_PANEL_VIEW_TYPE, (leaf) => new VaultwirePanelView(leaf, host));
   }
 
   private async loadSettings(): Promise<void> {

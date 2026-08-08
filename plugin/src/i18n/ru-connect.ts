@@ -36,6 +36,9 @@ export const RU_CONNECT = {
   'connect.password.heading': 'Пароль шифрования',
   'connect.password.name': 'Пароль',
   'connect.password.desc': 'Общий на команду, передаётся вне плагина. На сервер не уходит никогда.',
+  'connect.password.remember.name': 'Запомнить пароль на этом устройстве',
+  'connect.password.remember.desc':
+    'Пароль будет сохранён в открытом виде в файле настроек плагина внутри хранилища.',
   'connect.password.check': 'Проверить и продолжить',
   'connect.password.busy': 'Проверка пароля…',
   'connect.password.error.empty': 'Введите пароль.',

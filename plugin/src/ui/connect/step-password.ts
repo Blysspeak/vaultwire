@@ -25,6 +25,16 @@ export function renderPasswordStep(root: HTMLElement, host: StepHost): void {
       });
     });
 
+  new Setting(root)
+    .setName(t('connect.password.remember.name'))
+    .setDesc(t('connect.password.remember.desc'))
+    .addToggle((toggle) => {
+      toggle.setValue(state.rememberPassword);
+      toggle.onChange((value) => {
+        state.rememberPassword = value;
+      });
+    });
+
   const details = root.createDiv({ cls: 'vw-hint' });
   const payload = state.payload;
   if (payload !== null) {

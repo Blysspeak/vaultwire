@@ -62,11 +62,13 @@ export interface ConnectionDraft {
   readonly label: string;
   /** Метка этого устройства, та же, под которой активирован инвайт. */
   readonly deviceLabel: string;
+  /** Переключатель мастера: хранить пароль в настройках плагина. */
+  readonly rememberPassword: boolean;
 }
 
 /** Настройки подключения, готовые к сохранению после подтверждения плана. */
 export function buildConnectionSettings(draft: ConnectionDraft): ConnectionSettings {
-  return createDefaultConnection({
+  const connection = createDefaultConnection({
     spaceId: draft.payload.s,
     serverUrl: draft.payload.u,
     deviceId: draft.device.deviceId,
@@ -77,6 +79,9 @@ export function buildConnectionSettings(draft: ConnectionDraft): ConnectionSetti
     role: draft.device.role,
     keyEpoch: draft.device.epoch,
   });
+  // Сам пароль сюда не кладётся: он сохраняется только после успешного старта.
+  connection.rememberPassword = draft.rememberPassword;
+  return connection;
 }
 
 /** Повторяемая ошибка — это транспорт; всё прочее означает негодный инвайт. */

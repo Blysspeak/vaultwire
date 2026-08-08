@@ -77,6 +77,8 @@ export function connectionSettings(overrides: Partial<ConnectionSettings> = {}):
     maxFileBytes: null,
     conflictStrategy: 'copy',
     autoSync: true,
+    rememberPassword: true,
+    password: null,
     lastSeq: 0,
     lastSyncedAt: null,
     ...overrides,

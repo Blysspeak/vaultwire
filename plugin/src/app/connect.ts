@@ -3,6 +3,7 @@ import type { App } from 'obsidian';
 import { obsidianRequest } from '../api/request';
 import { t } from '../i18n/ru';
 import type { RingLog } from '../log';
+import { storePassword } from '../settings/remember';
 import type { ConnectionSettings, VaultwireSettings } from '../settings/types';
 import { ObsidianVaultReader } from '../sync';
 import type { SyncManager } from '../sync';
@@ -49,7 +50,12 @@ async function apply(
   await deps.registries.load([connection.spaceId]);
   deps.manager.add(connection);
   const started = await deps.manager.start(connection.spaceId, password);
-  if (started.ok && !connection.autoSync) deps.manager.pause(connection.spaceId);
+  if (started.ok) {
+    if (!connection.autoSync) deps.manager.pause(connection.spaceId);
+    // Пароль проверен верификатором: только теперь его есть смысл запоминать.
+    storePassword(connection, password, connection.rememberPassword);
+    await deps.save();
+  }
   new Notice(
     started.ok
       ? t('notice.connected')

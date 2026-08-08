@@ -7,6 +7,7 @@ import { scanConnection } from '../../engine/scanner';
 import type { ScanFile } from '../../engine/scanner';
 import { t } from '../../i18n/ru';
 import { createDefaultConnection } from '../../settings/defaults';
+import { storePassword } from '../../settings/remember';
 import type { ConnectionSettings, VaultwireSettings } from '../../settings/types';
 import type { BootstrapFailure, SyncManager } from '../../sync';
 
@@ -93,6 +94,8 @@ async function uploadSnapshot(
   try {
     const started = await deps.manager.start(connection.spaceId, password);
     if (!started.ok) return { ok: false, failure: started.failure ?? 'transport' };
+    storePassword(connection, password, connection.rememberPassword);
+    await deps.save();
     return { ok: true, connection, pushed: runtime.connection.lastReport?.pushed.length ?? 0 };
   } finally {
     window.clearInterval(tick);

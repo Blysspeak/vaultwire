@@ -81,6 +81,7 @@ export async function submitPassword(state: WizardState, deps: SubmitDeps): Prom
       folder: state.folder,
       label: state.label,
       deviceLabel: deps.deviceLabel,
+      rememberPassword: state.rememberPassword,
     });
     return {
       ok: true,

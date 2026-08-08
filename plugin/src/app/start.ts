@@ -3,9 +3,10 @@ import type { RingLog } from '../log';
 import type { VaultwireSettings } from '../settings/types';
 import { registerVaultEvents, SyncManager } from '../sync';
 import type { StatusStore } from '../ui/panel/store';
+import { autoStart } from './auto-start';
 import { createSyncManager } from './engine';
 import type { ConflictRegistries } from './registries';
-import { lockedConnections, unlockChain } from './unlock';
+import { unlockChain } from './unlock-chain';
 
 export interface StartDeps {
   readonly app: App;
@@ -16,6 +17,8 @@ export interface StartDeps {
   /** plugin.registerInterval и plugin.registerEvent: снятие — дело Obsidian. */
   registerInterval(run: () => void, ms: number): void;
   registerEvent(ref: EventRef): void;
+  /** Запись настроек: сохранённый пароль мог не подойти и быть стёрт. */
+  save(): Promise<void>;
 }
 
 /**
@@ -42,13 +45,24 @@ export function startEngine(deps: StartDeps): SyncManager {
 }
 
 /**
- * Пароль шифрования на диск не попадает никогда, поэтому после запуска ключей
- * нет и прогон невозможен. Спрашиваем только там, где включена автосинхронизация:
- * ручное подключение разблокируется своей командой.
+ * Подключения с сохранённым паролем поднимаются сами. Окно открывается только
+ * там, где пароля нет, и только при включённой автосинхронизации: ручное
+ * подключение разблокируется своей командой.
  */
 function askPasswords(deps: StartDeps, manager: SyncManager): void {
   const auto = deps.settings.connections.filter((connection) => connection.autoSync);
-  unlockChain(deps.app, manager, lockedConnections(manager, auto), () => {
+  void autoStart(manager, auto, () => deps.save()).then((queue) => {
     deps.store.publish();
+    unlockChain(
+      {
+        app: deps.app,
+        manager,
+        save: () => deps.save(),
+        onDone: () => {
+          deps.store.publish();
+        },
+      },
+      queue,
+    );
   });
 }
