@@ -7,12 +7,9 @@
 name: Server
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'server/**'
-      - 'shared/**'
-      - '.github/workflows/server.yml'
+  # Только ручной запуск, пока раннера нет: автозапуск по push копил задачи,
+  # которые висят в очереди без исполнителя и отменяются по таймауту. Вернуть
+  # блок push, когда раннер с метками [self-hosted, vaultwire] будет заведён.
   workflow_dispatch:
 
 concurrency:
