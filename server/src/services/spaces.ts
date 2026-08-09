@@ -2,6 +2,7 @@ import { ulid } from 'ulid';
 import {
   spaceIdSchema,
   type CreateSpaceResponse,
+  type DeleteSpaceResponse,
   type GetSpaceResponse,
   type Role,
 } from '@vaultwire/shared';
@@ -75,6 +76,21 @@ export async function getSpaceOverview(spaceId: string, role: Role): Promise<Get
     verifier: space.verifier === '' ? null : space.verifier,
     retentionDays: space.retentionDays,
   };
+}
+
+/**
+ * Снос пространства целиком. Документы, ревизии, устройства и инвайты уходят
+ * каскадом по внешним ключам, тела остаются сиротами и достаются сборщику мусора:
+ * стирать их здесь же нельзя, они могут быть разделены с другими пространствами.
+ */
+export async function deleteSpace(spaceId: string): Promise<DeleteSpaceResponse> {
+  const [removedDocs, removedDevices] = await Promise.all([
+    prisma.doc.count({ where: { spaceId } }),
+    prisma.device.count({ where: { spaceId } }),
+  ]);
+  const removed = await prisma.space.deleteMany({ where: { id: spaceId } });
+  if (removed.count === 0) throw new ProtocolError('not_found', 'пространство не найдено');
+  return { spaceId: spaceIdSchema.parse(spaceId), removedDocs, removedDevices };
 }
 
 /**

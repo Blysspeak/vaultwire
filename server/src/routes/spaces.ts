@@ -3,12 +3,13 @@ import {
   createSpaceRequestSchema,
   spaceParamsSchema,
   type CreateSpaceResponse,
+  type DeleteSpaceResponse,
   type GetSpaceResponse,
 } from '@vaultwire/shared';
 import { config } from '#config';
 import { ProtocolError } from '#protocol-error';
 import { parseOrFail } from '#routes/validate';
-import { createSpace, getSpaceOverview, setVerifier } from '#services/spaces';
+import { createSpace, deleteSpace, getSpaceOverview, setVerifier } from '#services/spaces';
 import { secretsEqual } from '#services/tokens';
 
 /**
@@ -55,6 +56,12 @@ export const spacesRoutes: FastifyPluginAsync = async (app) => {
     const device = request.device;
     if (device === null) throw new ProtocolError('unauthorized', 'устройство не определено');
     const response: GetSpaceResponse = await getSpaceOverview(params.id, device.role);
+    return response;
+  });
+
+  app.delete('/spaces/:id', { preHandler: app.requireRole('owner') }, async (request) => {
+    const params = parseOrFail(spaceParamsSchema, request.params, 'путь');
+    const response: DeleteSpaceResponse = await deleteSpace(params.id);
     return response;
   });
 

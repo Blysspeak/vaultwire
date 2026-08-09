@@ -39,3 +39,16 @@ export const getSpaceResponseSchema = z.object({
   retentionDays: z.number().int().positive(),
 });
 export type GetSpaceResponse = z.infer<typeof getSpaceResponseSchema>;
+
+/**
+ * DELETE /v1/spaces/{id}, только владелец.
+ * Пространство сносится целиком: документы, ревизии, устройства и инвайты уходят
+ * каскадом, тела остаются сиротами и достаются сборщику мусора. Подтверждение
+ * идентификатором требует клиент: сервер лишь исполняет.
+ */
+export const deleteSpaceResponseSchema = z.object({
+  spaceId: spaceIdSchema,
+  removedDocs: z.number().int().nonnegative(),
+  removedDevices: z.number().int().nonnegative(),
+});
+export type DeleteSpaceResponse = z.infer<typeof deleteSpaceResponseSchema>;

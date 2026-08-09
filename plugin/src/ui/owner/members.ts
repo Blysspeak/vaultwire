@@ -1,7 +1,5 @@
-import { canAdmin } from '@vaultwire/shared';
-import type { DeviceSummary } from '@vaultwire/shared';
-import { ButtonComponent, Notice } from 'obsidian';
-import type { App } from 'obsidian';
+import { canAdmin, type DeviceSummary } from '@vaultwire/shared';
+import { Notice, type App } from 'obsidian';
 import type { VaultwireClient } from '../../api/client';
 import { t } from '../../i18n/ru';
 import type { RingLog } from '../../log';
@@ -10,7 +8,9 @@ import type { PanelTabView } from '../panel/types';
 import { ConfirmModal } from '../confirm';
 import { errorText } from '../format';
 import { PromptModal } from '../prompt';
+import { confirmDeleteSpace } from './delete-space';
 import { InviteModal } from './members-invite';
+import { renderMembersToolbar } from './members-toolbar';
 import { renderDeviceRow } from './members-row';
 
 export interface MembersDeps {
@@ -32,16 +32,17 @@ export class MembersTab implements PanelTabView {
 
   constructor(private readonly deps: MembersDeps) {
     this.el = createDiv({ cls: 'vw-members' });
-    const toolbar = this.el.createDiv({ cls: 'vw-members-toolbar' });
-    new ButtonComponent(toolbar).setButtonText(t('members.refresh')).onClick(() => {
-      void this.refresh();
-    });
-    new ButtonComponent(toolbar)
-      .setButtonText(t('members.invite'))
-      .setCta()
-      .onClick(() => {
+    renderMembersToolbar(this.el, {
+      refresh: () => {
+        void this.refresh();
+      },
+      invite: () => {
         this.openInvite();
-      });
+      },
+      deleteSpace: () => {
+        this.confirmDeleteSpace();
+      },
+    });
     this.listEl = this.el.createDiv({ cls: 'vw-members-list' });
   }
 
@@ -120,6 +121,16 @@ export class MembersTab implements PanelTabView {
       this.deps.log.error('members', 'отзыв не прошёл', { reason: errorText(error) });
       new Notice(t('notice.revokeFailed'));
     }
+  }
+
+  private confirmDeleteSpace(): void {
+    confirmDeleteSpace({
+      app: this.deps.app,
+      client: this.deps.client,
+      spaceId: this.deps.connection.spaceId,
+      log: this.deps.log,
+      done: () => this.refresh(),
+    });
   }
 
   /** Метка своего устройства: локальная настройка, серверу она не пересылается. */

@@ -5,6 +5,7 @@ import {
   createInviteResponseSchema,
   createSpaceResponseSchema,
   deleteDocResponseSchema,
+  deleteSpaceResponseSchema,
   docWriteResultSchema,
   getSpaceResponseSchema,
   joinSpaceResponseSchema,
@@ -49,6 +50,12 @@ export class VaultwireClient {
   getSpace(spaceId: vw.SpaceId): Promise<vw.GetSpaceResponse> {
     const path = paths.spacePath(spaceId);
     return this.http.json({ method: 'GET', path }, getSpaceResponseSchema);
+  }
+
+  /** DELETE /v1/spaces/{id}, владелец. Сносит серверную сторону, файлы участников не трогает. */
+  deleteSpace(spaceId: vw.SpaceId): Promise<vw.DeleteSpaceResponse> {
+    const path = paths.spacePath(spaceId);
+    return this.http.json({ method: 'DELETE', path }, deleteSpaceResponseSchema);
   }
 
   /** PATCH /v1/spaces/{id} — установка верификатора сразу после создания, только владелец. */

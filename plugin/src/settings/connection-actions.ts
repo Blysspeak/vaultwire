@@ -75,9 +75,9 @@ function askPassword(deps: ConnectionsDeps, connection: ConnectionSettings, done
 }
 
 /**
- * Отключение пространства. Подтверждается набором идентификатора: кнопка стоит
- * рядом с обычными, а промах по ней стоил бы всей истории синхронизации.
- * Файлы на диске остаются нетронутыми, уходит только привязка.
+ * Отключение пространства. Обычное подтверждение, без набора идентификатора:
+ * действие обратимое, файлы на диске остаются, а подключиться заново можно тем же
+ * кодом. Заставлять вручную набирать ulid ради обратимого действия — издевательство.
  */
 export function disconnectConnection(deps: ConnectionsDeps, connection: ConnectionSettings): void {
   new ConfirmModal(
@@ -86,8 +86,6 @@ export function disconnectConnection(deps: ConnectionsDeps, connection: Connecti
       title: t('disconnect.title'),
       body: t('disconnect.body'),
       confirmText: t('settings.connections.disconnect'),
-      requiredText: connection.spaceId,
-      prompt: t('disconnect.prompt'),
     },
     () => {
       deps.actions.manager()?.remove(connection.spaceId);
