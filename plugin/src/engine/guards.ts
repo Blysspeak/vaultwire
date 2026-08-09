@@ -20,8 +20,15 @@ export interface MassOperationCheck {
 }
 
 /**
- * Порог массовых операций раздела 6: больше 20 файлов или больше 15 процентов
- * подключённой папки к удалению — прогон останавливается и требует подтверждения.
+ * Ниже этого числа файлов доля не применяется: в папке из трёх заметок удаление
+ * одной даёт 33 процента, и порог срабатывал бы на каждом обычном действии.
+ * Смысл доли — поймать «снесло половину большого хранилища», а не рутину.
+ */
+export const RATIO_MIN_FILES = 20;
+
+/**
+ * Порог массовых операций раздела 6: больше 20 файлов к удалению либо заметная
+ * доля достаточно большой папки — прогон останавливается и требует подтверждения.
  * Ловит отвалившийся сетевой диск и случайно удалённую папку.
  */
 export function checkMassOperations(
@@ -32,8 +39,9 @@ export function checkMassOperations(
   const paths = ops.filter(isDestructive).map((op) => op.path);
   const deletions = paths.length;
   const ratio = scannedFiles > 0 ? deletions / scannedFiles : 0;
+  const ratioApplies = scannedFiles >= RATIO_MIN_FILES && ratio > thresholds.ratio;
   const confirmationRequired =
-    deletions > 0 && (deletions > thresholds.absolute || ratio > thresholds.ratio);
+    deletions > 0 && (deletions > thresholds.absolute || ratioApplies);
   return { deletions, ratio, confirmationRequired, paths };
 }
 

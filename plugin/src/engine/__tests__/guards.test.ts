@@ -32,19 +32,38 @@ describe('порог массовых операций', () => {
     expect(check.paths).toHaveLength(21);
   });
 
-  it('требует подтверждения при превышении доли папки', () => {
-    const check = checkMassOperations(pullDeletes(3), 10, thresholds);
+  it('требует подтверждения при превышении доли достаточно большой папки', () => {
+    const check = checkMassOperations(pullDeletes(15), 50, thresholds);
     expect(check.ratio).toBeCloseTo(0.3);
     expect(check.confirmationRequired).toBe(true);
   });
 
+  it('на маленькой папке доля не применяется: удаление одного из трёх это рутина', () => {
+    const check = checkMassOperations(pullDeletes(1), 3, thresholds);
+    expect(check.ratio).toBeCloseTo(0.333, 2);
+    expect(check.confirmationRequired).toBe(false);
+  });
+
+  it('но абсолютный порог работает и на маленькой папке', () => {
+    const check = checkMassOperations(pullDeletes(21), 21, thresholds);
+    expect(check.confirmationRequired).toBe(true);
+  });
+
   it('считает и отправку удалений: отвалившийся диск выглядит как пустая папка', () => {
-    const ops: SyncOp[] = [
-      { kind: 'pushDelete', path: 'a.md', docId: docIdFor('a.md'), reason: 'local-deleted', expectedRev: 1 },
-      { kind: 'noop', path: 'b.md', docId: docIdFor('b.md'), reason: 'both-unchanged' },
-    ];
-    const check = checkMassOperations(ops, 4, thresholds);
-    expect(check.deletions).toBe(1);
+    const ops: SyncOp[] = Array.from({ length: 10 }, (_, i) => {
+      const path = `a-${i}.md`;
+      return {
+        kind: 'pushDelete',
+        path,
+        docId: docIdFor(path),
+        reason: 'local-deleted',
+        expectedRev: 1,
+      } satisfies SyncOp;
+    });
+    ops.push({ kind: 'noop', path: 'b.md', docId: docIdFor('b.md'), reason: 'both-unchanged' });
+
+    const check = checkMassOperations(ops, 30, thresholds);
+    expect(check.deletions).toBe(10);
     expect(check.confirmationRequired).toBe(true);
   });
 
