@@ -31,9 +31,13 @@ export async function activateInvite(
   deviceLabel: string,
   request: RequestFn,
 ): Promise<ActivateResult> {
-  const client = createClient({ baseUrl: payload.u, token: '', request });
+  // Сама активация идёт без токена: он и выдаётся этим запросом.
+  const anonymous = createClient({ baseUrl: payload.u, token: '', request });
   try {
-    const device = await client.joinSpace(payload.s, { invite: payload.i, label: deviceLabel });
+    const device = await anonymous.joinSpace(payload.s, { invite: payload.i, label: deviceLabel });
+    // Дальше мастер строит план и обязан ходить уже с выданным токеном: клиент
+    // без него получит 401 на первом же запросе после успешной активации.
+    const client = createClient({ baseUrl: payload.u, token: device.deviceToken, request });
     return { ok: true, joined: { client, device } };
   } catch (error) {
     return { ok: false, failure: failureOf(error) };

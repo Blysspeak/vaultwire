@@ -3,6 +3,7 @@ import { t } from '../../i18n/ru';
 import type { RingLog } from '../../log';
 import type { ConnectionSettings } from '../../settings/types';
 import type { VaultReader } from '../../sync/types';
+import { errorText } from '../format';
 import { activateInvite, buildConnectionSettings, checkPassword } from './join';
 import type { ActivatedInvite } from './join';
 import { computeConnectionPlan } from './plan';
@@ -94,6 +95,8 @@ export async function submitPassword(state: WizardState, deps: SubmitDeps): Prom
     deps.log.error('ui', 'мастер подключения не построил план', {
       message: error instanceof Error ? error.message : String(error),
     });
-    return { ok: false, joined, error: t('connect.password.error.plan') };
+    // Причина в сообщении обязательна: «сервер недоступен» на любую ошибку
+    // прячет настоящую, а 401 от 500 отличается для пользователя принципиально.
+    return { ok: false, joined, error: t('connect.password.error.plan', { reason: errorText(error) }) };
   }
 }

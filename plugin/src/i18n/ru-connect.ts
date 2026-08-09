@@ -45,7 +45,7 @@ export const RU_CONNECT = {
   'connect.password.error.mismatch': 'Пароль не подходит к пространству. Подключение не создано.',
   'connect.password.error.invite': 'Сервер не принял инвайт: код просрочен, отозван или уже использован.',
   'connect.password.error.network': 'Сервер недоступен. Проверьте адрес и сеть.',
-  'connect.password.error.plan': 'Не удалось построить план: сервер недоступен.',
+  'connect.password.error.plan': 'Не удалось построить план: {reason}',
 
   'folder.pick.placeholder': 'Название папки',
   'folder.pick.root': 'Корень хранилища',
