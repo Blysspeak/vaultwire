@@ -47,10 +47,27 @@ export function generateSalt(): Bytes {
   return crypto.getRandomValues(new Uint8Array(SALT_BYTES));
 }
 
+/**
+ * Пароль перед выводом ключей приводится к каноничному виду. Две причины, обе
+ * ломают пространство молча и необратимо:
+ *   1. копирование из чата или таблицы притаскивает ведущий таб, пробел или
+ *      перевод строки — глазом их не видно, а ключи получаются другие;
+ *   2. кириллица с iOS приходит в NFD, с Windows в NFC, и один и тот же на вид
+ *      пароль даёт разные байты на разных устройствах.
+ * Внутренние пробелы сохраняются: они часть пароля.
+ */
+export function normalizePassword(password: string): string {
+  return password.normalize('NFC').trim();
+}
+
 export async function deriveMaster(password: string, salt: Bytes): Promise<Bytes> {
-  const material = await crypto.subtle.importKey('raw', utf8Encode(password), 'PBKDF2', false, [
-    'deriveBits',
-  ]);
+  const material = await crypto.subtle.importKey(
+    'raw',
+    utf8Encode(normalizePassword(password)),
+    'PBKDF2',
+    false,
+    ['deriveBits'],
+  );
   const bits = await crypto.subtle.deriveBits(
     { name: 'PBKDF2', salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
     material,

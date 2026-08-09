@@ -11,6 +11,7 @@ export {
   deriveMaster,
   generateSalt,
   metaKeyInfo,
+  normalizePassword,
   pathKeyInfo,
 } from './keys';
 

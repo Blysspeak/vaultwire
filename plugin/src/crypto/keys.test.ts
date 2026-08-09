@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { contentKeyInfo, deriveKeys, deriveMaster, metaKeyInfo, pathKeyInfo } from './keys';
+import {
+  contentKeyInfo,
+  deriveKeys,
+  deriveMaster,
+  metaKeyInfo,
+  normalizePassword,
+  pathKeyInfo,
+} from './keys';
 import { decryptString, encryptString } from './cipher';
 import { toHex } from './encoding';
 
@@ -20,8 +27,32 @@ describe('deriveMaster', () => {
   it('меняется от соли и от пароля', async () => {
     const base = toHex(await deriveMaster(PASSWORD, SALT));
     expect(toHex(await deriveMaster(PASSWORD, OTHER_SALT))).not.toBe(base);
-    expect(toHex(await deriveMaster(`${PASSWORD} `, SALT))).not.toBe(base);
+    expect(toHex(await deriveMaster(`${PASSWORD}!`, SALT))).not.toBe(base);
   }, SLOW);
+
+  it('мусор по краям не меняет ключ: копирование из чата тащит таб и перевод строки', async () => {
+    const base = toHex(await deriveMaster(PASSWORD, SALT));
+    expect(toHex(await deriveMaster(`\t${PASSWORD}`, SALT))).toBe(base);
+    expect(toHex(await deriveMaster(`${PASSWORD} `, SALT))).toBe(base);
+    expect(toHex(await deriveMaster(` ${PASSWORD}\n`, SALT))).toBe(base);
+  }, SLOW);
+});
+
+describe('normalizePassword', () => {
+  it('срезает пробельный мусор по краям', () => {
+    expect(normalizePassword('\tпароль ')).toBe('пароль');
+    expect(normalizePassword('  пароль\r\n')).toBe('пароль');
+  });
+
+  it('внутренние пробелы сохраняет: они часть пароля', () => {
+    expect(normalizePassword(' два слова ')).toBe('два слова');
+  });
+
+  it('приводит юникод к NFC: iOS отдаёт кириллицу в NFD', () => {
+    const nfd = 'йёлка'.normalize('NFD');
+    expect(nfd).not.toBe('йёлка');
+    expect(normalizePassword(nfd)).toBe('йёлка');
+  });
 });
 
 describe('deriveKeys', () => {
