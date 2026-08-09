@@ -19,9 +19,11 @@ export type SpaceFixture = {
   ownerDeviceId: string;
   writerDeviceId: string;
   readerDeviceId: string;
+  /** Сырой токен: нужен там, где запрос собирается вручную, мимо SpaceClient. */
+  writerToken: string;
 };
 
-type AddedDevice = { deviceId: string; client: SpaceClient };
+type AddedDevice = { deviceId: string; client: SpaceClient; token: string };
 
 /**
  * Устройство заводится прямо в базе: активация инвайта это отдельный сценарий,
@@ -33,7 +35,7 @@ async function addDevice(harness: Harness, spaceId: string, role: Role): Promise
   await harness.prisma.device.create({
     data: { id: deviceId, spaceId, tokenHash: hashToken(token), role, label: `тест ${role}` },
   });
-  return { deviceId, client: createClient(harness.app, spaceId, token) };
+  return { deviceId, client: createClient(harness.app, spaceId, token), token };
 }
 
 /** Своё пространство на каждый тест: наборы не мешают друг другу и чистятся разом. */
@@ -59,6 +61,7 @@ export async function createSpaceFixture(
     ownerDeviceId: owner.deviceId,
     writerDeviceId: writer.deviceId,
     readerDeviceId: reader.deviceId,
+    writerToken: writer.token,
   };
 }
 

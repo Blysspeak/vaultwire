@@ -32,6 +32,22 @@ export async function buildApp(): Promise<FastifyInstance> {
     genReqId: () => ulid(),
   });
 
+  // DELETE уходит без тела, но клиентский слой всё равно проставляет заголовок
+  // application/json, и стандартный парсер Fastify отвечает на такое 415. Пустое
+  // тело здесь законно: удаление документа несёт всё нужное в пути и If-Match.
+  app.addContentTypeParser('application/json', { parseAs: 'string' }, (_req, body, done) => {
+    const raw = typeof body === 'string' ? body.trim() : '';
+    if (raw.length === 0) {
+      done(null, undefined);
+      return;
+    }
+    try {
+      done(null, JSON.parse(raw));
+    } catch {
+      done(new ProtocolError('bad_request', 'тело не является корректным JSON'), undefined);
+    }
+  });
+
   registerAuth(app);
 
   await registerRateLimits(app);

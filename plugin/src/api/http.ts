@@ -109,7 +109,9 @@ export class HttpClient {
     if (request.json !== undefined) {
       return { ...param, body: JSON.stringify(request.json), contentType: 'application/json' };
     }
-    return param;
+    // Запрос без тела: requestUrl иначе проставляет application/json сам, и сервер
+    // отвечает 415 на DELETE. Пустая строка гасит заголовок.
+    return { ...param, contentType: '' };
   }
 }
 
