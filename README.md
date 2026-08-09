@@ -141,6 +141,15 @@ npm run build             # проверка типов и сборка main.js
 Корневой `styles.css` собирается склейкой из `plugin/styles/*.css` (Obsidian требует один файл,
 а правило проекта ограничивает длину файла). Правьте части, не результат: сборка перезапишет его.
 
+### Спецификации
+
+Спеки фич ведутся через [spec-kit](https://github.com/github/spec-kit). Шаблоны и конституция
+проекта лежат в `.specify/`, а команды агента ставятся локально и в репозиторий не коммитятся:
+
+```
+uvx --from git+https://github.com/github/spec-kit.git specify init --here --integration claude --script ps
+```
+
 ### Проверки
 
 ```
