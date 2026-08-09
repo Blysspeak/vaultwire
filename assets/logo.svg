@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="vaultwire">
+  <title>vaultwire</title>
+  <defs>
+    <linearGradient id="vw-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1e1b3a"/>
+      <stop offset="1" stop-color="#2b1f4d"/>
+    </linearGradient>
+    <linearGradient id="vw-wire" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8b7bf0"/>
+      <stop offset="0.5" stop-color="#a78bfa"/>
+      <stop offset="1" stop-color="#5eead4"/>
+    </linearGradient>
+    <linearGradient id="vw-shield" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c4b5fd"/>
+      <stop offset="1" stop-color="#7c6df2"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="128" height="128" rx="28" fill="url(#vw-bg)"/>
+
+  <!-- Провод: буква V, соединяющая два узла. Она же жест «из хранилища в хранилище». -->
+  <path d="M34 36 L64 92 L94 36"
+        fill="none" stroke="url(#vw-wire)" stroke-width="9"
+        stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Узлы на концах: два устройства одной команды. -->
+  <circle cx="34" cy="36" r="9" fill="#1e1b3a" stroke="url(#vw-wire)" stroke-width="6"/>
+  <circle cx="94" cy="36" r="9" fill="#1e1b3a" stroke="url(#vw-wire)" stroke-width="6"/>
+
+  <!-- Щит в вершине: всё, что идёт по проводу, зашифровано до отправки. -->
+  <path d="M64 60 L78 66 V78 C78 87 71 94 64 97 C57 94 50 87 50 78 V66 Z"
+        fill="url(#vw-shield)"/>
+  <path d="M58 78 L62.5 82.5 L71 74"
+        fill="none" stroke="#1e1b3a" stroke-width="5"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
