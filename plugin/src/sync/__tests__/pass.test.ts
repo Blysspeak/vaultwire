@@ -38,7 +38,8 @@ describe('прогон целиком', () => {
     expect(h.connection.index.get(PATH)?.rev).toBe(1);
     expect(h.connection.index.get(PATH)?.lastAuthor).toBe('ноутбук');
     expect(h.connection.index.get(PATH)?.lastDirection).toBe('push');
-    expect(h.calls.some((call) => call.startsWith('PUT '))).toBe(true);
+    // Создания и обновления уходят батчем, не одиночным PUT: см. push-batch.ts.
+    expect(h.calls.some((call) => call.startsWith('POST ') && call.includes(':batch'))).toBe(true);
   });
 
   it('одновременная правка даёт конфликтную копию рядом', async () => {

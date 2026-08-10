@@ -16,8 +16,11 @@ export { DocIdCache } from './doc-ids';
 export { fetchChanges } from './remote';
 export type { RemoteChanges } from './remote';
 
-export { decodeBody, fetchBody, moveDoc, pushDelete, pushDoc, readLocal } from './transfer';
-export type { TransferContext } from './transfer';
+export { decodeBody, fetchBody, moveDoc, preparePush, pushDelete, readLocal } from './transfer';
+export type { PreparedPush, TransferContext, Upload } from './transfer';
+
+export { runBatchPush } from './push-batch';
+export type { BatchPushOutcome } from './push-batch';
 
 export { preparePull } from './pull';
 export type { PullOutcome } from './pull';

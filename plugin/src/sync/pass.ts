@@ -108,7 +108,7 @@ export async function runPass(deps: PassDeps, at: number): Promise<RunReport> {
   commitPull(connection, pull, applied);
   for (const record of pull.records) await deps.onConflict?.(record);
   // Слияние и победившая локальная версия уезжают тем же прогоном, а не следующим.
-  const push = await runPush(ctx, [...ops, ...pull.pushes], new SyncQueue({ concurrency: limits.concurrency }));
+  const push = await runPush(ctx, [...ops, ...pull.pushes], limits.concurrency);
 
   connection.setLastSeq(remote.seq);
   await connection.index.flush();

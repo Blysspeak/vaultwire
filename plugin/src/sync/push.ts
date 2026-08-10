@@ -1,6 +1,8 @@
 import type { SyncOp } from '../engine/ops';
-import type { ProblemDoc, QueueTask, SyncQueue } from '../engine/queue';
-import { moveDoc, pushDelete, pushDoc } from './transfer';
+import type { ProblemDoc, QueueTask } from '../engine/queue';
+import { SyncQueue } from '../engine/queue';
+import { runBatchPush } from './push-batch';
+import { moveDoc, pushDelete } from './transfer';
 import type { TransferContext } from './transfer';
 
 export interface PushOutcome {
@@ -15,37 +17,36 @@ export interface PushOutcome {
  * Отправляющая половина прогона. Порядок раздела 6: сначала создания,
  * обновления и переезды, только потом удаления. Обратный порядок дал бы окно,
  * в котором переехавший файл выглядит удалённым у остальных участников.
+ *
+ * Создания и обновления уходят пачками через runBatchPush — это то место,
+ * где при первичной заливке большого хранилища счёт идёт на тысячи файлов и
+ * запрос на каждый по отдельности превращает секунды в десятки минут.
+ * Переезды остаются одиночными: атомарный эндпоинт под них уже есть, а массово
+ * они не случаются. Удаления батч не поддерживает: элемент батча требует тело.
  */
 export async function runPush(
   ctx: TransferContext,
   ops: readonly SyncOp[],
-  queue: SyncQueue,
+  concurrency: number,
 ): Promise<PushOutcome> {
-  const pushed: string[] = [];
+  const pushOps = ops.filter((op) => op.kind === 'push');
+  const moved: string[] = [];
   const deleted: string[] = [];
-  const writes: QueueTask[] = [];
-  const deletes: QueueTask[] = [];
+  const moveTasks: QueueTask[] = [];
+  const deleteTasks: QueueTask[] = [];
 
   for (const op of ops) {
-    if (op.kind === 'push') {
-      writes.push({
-        id: op.docId,
-        path: op.path,
-        run: async () => {
-          if (await pushDoc(ctx, op)) pushed.push(op.path);
-        },
-      });
-    } else if (op.kind === 'move') {
-      writes.push({
+    if (op.kind === 'move') {
+      moveTasks.push({
         id: op.docId,
         path: op.path,
         run: async () => {
           await moveDoc(ctx, op);
-          pushed.push(op.path);
+          moved.push(op.path);
         },
       });
     } else if (op.kind === 'pushDelete') {
-      deletes.push({
+      deleteTasks.push({
         id: op.docId,
         path: op.path,
         run: async () => {
@@ -56,7 +57,18 @@ export async function runPush(
     }
   }
 
-  const first = await queue.run(writes);
-  const second = await queue.run(deletes);
-  return { pushed, deleted, problems: [...first.problems, ...second.problems] };
+  const moveQueue = new SyncQueue({ concurrency });
+  const [batch, moveReport] = await Promise.all([
+    runBatchPush(ctx, pushOps, concurrency),
+    moveQueue.run(moveTasks),
+  ]);
+
+  const deleteQueue = new SyncQueue({ concurrency });
+  const deleteReport = await deleteQueue.run(deleteTasks);
+
+  return {
+    pushed: [...batch.pushed, ...moved],
+    deleted,
+    problems: [...batch.problems, ...moveReport.problems, ...deleteReport.problems],
+  };
 }

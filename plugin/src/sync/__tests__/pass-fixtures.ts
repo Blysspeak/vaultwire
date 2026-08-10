@@ -47,7 +47,7 @@ export function pullHandler(changes: string, cipher: ArrayBuffer): Handler {
   };
 }
 
-/** Ответы сервера на отправку: приём блоба и запись документа. */
+/** Ответы сервера на отправку: приём блоба и запись документа батчем. */
 export function pushHandler(): Handler {
   return (param: RequestUrlParam): Reply | null => {
     if (param.url.includes('/changes')) {
@@ -60,7 +60,11 @@ export function pushHandler(): Handler {
         body: JSON.stringify({ hash: headers[BLOB_HASH_HEADER] ?? '', size: 10 }),
       };
     }
-    if (param.method === 'PUT') return { status: 200, body: JSON.stringify({ rev: 1, seq: 3 }) };
+    if (param.url.endsWith(':batch')) {
+      const items = (JSON.parse(String(param.body)) as { items: Array<{ docId: string }> }).items;
+      const body = items.map((item, i) => ({ docId: item.docId, rev: 1, seq: 3 + i }));
+      return { status: 200, body: JSON.stringify(body) };
+    }
     return null;
   };
 }

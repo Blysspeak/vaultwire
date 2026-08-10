@@ -23,29 +23,36 @@ export interface TransferContext {
 }
 
 /**
- * Отправка: тело отдельным блобом, метаданные шифром, затем условная запись.
- * false — второй барьер подавления эха: содержимое совпало с индексом, значит
- * это наша собственная запись и отправлять нечего.
+ * Тело документа, готового к записи: блоб уже залит, метаданные уже зашифрованы.
+ * Дальше это либо один PUT, либо элемент батча — разница только в транспорте.
  */
-export async function pushDoc(ctx: TransferContext, op: PushOp): Promise<boolean> {
+export interface PreparedPush {
+  readonly path: string;
+  readonly docId: DocId;
+  readonly expectedRev: number | null;
+  readonly metaCipher: string;
+  readonly upload: Upload;
+  readonly local: LocalFile;
+}
+
+/**
+ * Заливка тела и подготовка записи, без самого запроса на запись: вызывающий
+ * решает, идёт ли она одним PUT или элементом батча. null — второй барьер
+ * подавления эха: содержимое совпало с индексом, значит это наша собственная
+ * запись и отправлять нечего.
+ */
+export async function preparePush(ctx: TransferContext, op: PushOp): Promise<PreparedPush | null> {
   const plain = await readLocal(ctx, op.path);
   const plainHash = await sha256Hex(plain);
   const entry = ctx.index.get(op.path);
   if (entry !== undefined && !ctx.echo.shouldPush(op.path, plainHash, entry)) {
     ctx.index.set({ ...entry, mtime: op.local.mtime, size: plain.byteLength, dirty: false });
-    return false;
+    return null;
   }
   const upload = await uploadBody(ctx, plain, plainHash);
   const kind: DocOp = op.expectedRev === null ? 'create' : 'update';
   const metaCipher = await encryptMeta(ctx.keys.metaKey, meta(ctx, op.path, op.local, upload, kind));
-  const result = await ctx.client.putDoc(
-    ctx.spaceId,
-    op.docId,
-    { metaCipher, blobHash: upload.blobHash, size: upload.size },
-    op.expectedRev,
-  );
-  commit(ctx, op.path, op.docId, result.rev, upload, op.local.mtime);
-  return true;
+  return { path: op.path, docId: op.docId, expectedRev: op.expectedRev, metaCipher, upload, local: op.local };
 }
 
 /** Удаление это надгробие: тело живёт срок хранения, запись индекса уходит. */
@@ -67,7 +74,7 @@ export async function moveDoc(ctx: TransferContext, op: MoveOp): Promise<void> {
     blobHash: upload.blobHash,
   });
   ctx.index.delete(op.fromPath);
-  commit(ctx, op.path, op.docId, result.rev, upload, op.local.mtime);
+  commitPush(ctx, op.path, op.docId, result.rev, upload, op.local.mtime);
 }
 
 /** Приём: тело блоба расшифровывается, запись на диск делает applyPlan. */
@@ -86,7 +93,7 @@ export function decodeBody(relPath: string, body: ArrayBuffer): string | ArrayBu
   return isTextPath(relPath) ? utf8Decode(new Uint8Array(body)) : body;
 }
 
-interface Upload {
+export interface Upload {
   readonly blobHash: BlobHash;
   readonly plainHash: string;
   readonly size: number;
@@ -117,7 +124,8 @@ function meta(
   };
 }
 
-function commit(
+/** Запись индекса после успешной отправки, общая для одиночного PUT и батча. */
+export function commitPush(
   ctx: TransferContext,
   relPath: string,
   docId: DocId,
