@@ -1,7 +1,7 @@
 {
   "id": "vaultwire",
   "name": "vaultwire",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "minAppVersion": "1.12.0",
   "description": "Двусторонняя синхронизация хранилища между участниками команды через собственный сервер со сквозным шифрованием на клиенте.",
   "author": "Vladislav Rahmanov",

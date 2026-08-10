@@ -1,6 +1,6 @@
 {
   "name": "vaultwire",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Плагин Obsidian: двусторонняя синхронизация хранилища со сквозным шифрованием",
   "main": "main.js",
   "type": "module",
